@@ -1,0 +1,245 @@
+\chapter{Sesión 4: Canales, suscripciones y publicaciones}
+\label{ch:sesion4}
+
+\section{Objetivo de la sesión}
+
+Implementar los endpoints REST del dominio principal de NotiUAM:
+
+\begin{itemize}[leftmargin=*]
+  \item CRUD de canales temáticos (\texttt{/api/channels}).
+  \item Suscripción y desuscripción idempotentes (\texttt{/api/channels/\{id\}/subscribe}).
+  \item Publicación y listado paginado de avisos (\texttt{/api/channels/\{id\}/posts}).
+  \item Control de acceso basado en el usuario autenticado (dueño del canal, autor del post, rol admin).
+\end{itemize}
+
+\section{Contexto}
+
+En la Sesión~\ref{ch:sesion3} quedó listo el sistema de autenticación JWT. Sin embargo, el backend solo exponía \texttt{/api/auth/**}; no existía ningún endpoint de negocio. Tampoco había una forma limpia de obtener el usuario autenticado desde los servicios, ni excepciones específicas del dominio para mapear a códigos HTTP (404, 403).
+
+\section{Desarrollo}
+
+\subsection{Estructura creada}
+
+\begin{lstlisting}[language=bash]
+src/main/java/mx/uam/notiuam/
+|- config/
+|  `- CurrentUser.java                 (helper de usuario autenticado)
+|- dto/channel/
+|  |- ChannelCreateRequest.java
+|  |- ChannelUpdateRequest.java
+|  |- ChannelResponse.java
+|  `- ChannelSummaryResponse.java
+|- dto/post/
+|  |- PostCreateRequest.java
+|  `- PostResponse.java
+|- service/
+|  |- ChannelService.java
+|  |- SubscriptionService.java
+|  `- PostService.java
+|- controller/
+|  `- ChannelController.java
+`- exception/
+   |- NotFoundException.java
+   `- ForbiddenException.java
+\end{lstlisting}
+
+\subsection{Decisiones técnicas}
+
+\begin{itemize}[leftmargin=*]
+  \item \textbf{Separación controller / service.} Los controllers no acceden directamente a los repositorios; toda la lógica vive en la capa de servicio.
+  \item \textbf{UUID como identificador público.} A diferencia de un \texttt{Long autoincremental}, los UUID evitan que se pueda enumerar recursos (\texttt{/api/channels/1}, \texttt{/2}, ...).
+  \item \textbf{Suscripción idempotente.} Llamar dos veces al endpoint de suscribirse no devuelve error; el segundo intento es un no-op. Esto simplifica el cliente móvil y evita problemas por reintentos de red.
+  \item \textbf{Control de acceso en servicio, no en controller.} El \texttt{ChannelService} sabe quién es el dueño del canal y quién es admin; el controller solo delega.
+  \item \textbf{Paginación en posts.} Los listados de publicaciones usan \texttt{Pageable} de Spring Data con un tope de 50 elementos por página para evitar respuestas gigantes.
+\end{itemize}
+
+\subsection{Componentes clave}
+
+\subsubsection{\texttt{CurrentUser}}
+
+Helper inyectable que lee el \texttt{SecurityContext} y devuelve el principal tipado. Antes, cada controller tendría que hacer un \texttt{cast} manual; ahora basta con inyectar y llamar a \texttt{currentUser.requireId()}.
+
+\begin{lstlisting}[language=java]
+public AuthenticatedUser require() {
+    Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+    if (auth == null || !(auth.getPrincipal() instanceof AuthenticatedUser u)) {
+        throw new AccessDeniedException("No hay usuario autenticado");
+    }
+    return u;
+}
+\end{lstlisting}
+
+\subsubsection{Excepciones del dominio}
+
+Dos excepciones propias para separar los errores de negocio de los errores de sistema:
+
+\begin{itemize}[leftmargin=*]
+  \item \texttt{NotFoundException} $\rightarrow$ HTTP 404.
+  \item \texttt{ForbiddenException} $\rightarrow$ HTTP 403.
+\end{itemize}
+
+\subsubsection{Ampliación de \texttt{GlobalExceptionHandler}}
+
+\begin{aviso}[Cambio a un archivo previo]
+El \texttt{GlobalExceptionHandler} creado en la Sesión~\ref{ch:sesion3} se amplió con dos nuevos métodos:
+
+\begin{lstlisting}[language=java]
+@ExceptionHandler(NotFoundException.class)
+public ResponseEntity<Map<String, Object>> handleNotFound(NotFoundException e) { ... }
+
+@ExceptionHandler(ForbiddenException.class)
+public ResponseEntity<Map<String, Object>> handleForbidden(ForbiddenException e) { ... }
+\end{lstlisting}
+
+El formato de respuesta es el mismo que ya se usaba para \texttt{IllegalArgumentException}: \texttt{timestamp}, \texttt{status}, \texttt{error}, \texttt{message}.
+\end{aviso}
+
+\subsubsection{\texttt{ChannelService}}
+
+Contiene la lógica de canales:
+
+\begin{itemize}[leftmargin=*]
+  \item \texttt{listPublic(category, q)}: lista canales públicos con filtros opcionales.
+  \item \texttt{get(id)}: devuelve un canal con el campo \texttt{subscribedByMe} calculado para el usuario actual.
+  \item \texttt{create(req)}: crea un canal con el usuario autenticado como dueño.
+  \item \texttt{update(id, req)}: solo permitido al dueño o a un admin.
+  \item \texttt{delete(id)}: solo permitido al dueño o a un admin.
+  \item \texttt{listMine()} y \texttt{listSubscribed()}: filtros por usuario.
+\end{itemize}
+
+\subsubsection{\texttt{SubscriptionService}}
+
+La suscripción se hace con una clave compuesta (\texttt{userId}, \texttt{channelId}). El servicio verifica primero si ya existe; si existe, retorna sin error.
+
+\subsubsection{\texttt{PostService}}
+
+Publicación y listado. En el listado, si el canal es privado y el usuario no es dueño ni suscriptor, lanza \texttt{ForbiddenException}. El borrado solo lo puede hacer el autor o un admin.
+
+\subsubsection{\texttt{ChannelController}}
+
+Concentra todos los endpoints anidados bajo \texttt{/api/channels}:
+
+\begin{lstlisting}[language=java]
+GET    /api/channels
+GET    /api/channels/mine
+GET    /api/channels/subscribed
+GET    /api/channels/{id}
+POST   /api/channels
+PATCH  /api/channels/{id}
+DELETE /api/channels/{id}
+
+POST   /api/channels/{id}/subscribe
+DELETE /api/channels/{id}/subscribe
+
+GET    /api/channels/{id}/posts?page=0&size=20
+POST   /api/channels/{id}/posts
+\end{lstlisting}
+
+\subsection{Cambios a archivos previos}
+
+\begin{itemize}[leftmargin=*]
+  \item \texttt{GlobalExceptionHandler.java}: se añadieron dos handlers.
+  \item No se modificó \texttt{SecurityConfig.java}: la regla \texttt{anyRequest().authenticated()} ya cubría \texttt{/api/channels/**}.
+  \item No se modificó \texttt{application.yml}.
+  \item No se modificó ninguna entidad ni migración Flyway.
+\end{itemize}
+
+\section{Verificación}
+
+\subsection{Preparar variables}
+
+\begin{lstlisting}[language=bash]
+TOKEN=$(curl -s -X POST http://localhost:8081/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"aaron@uam.mx","password":"password123"}' | jq -r .accessToken)
+
+echo "Token: ${TOKEN:0:40}..."
+\end{lstlisting}
+
+\begin{nota}[Nota]
+El error más común es ejecutar el comando de login sin \texttt{TOKEN=\$(...)} y perder el token. Sin la asignación, el token se imprime en pantalla pero no se guarda.
+\end{nota}
+
+\subsection{Crear, suscribirse y publicar}
+
+\begin{lstlisting}[language=bash]
+# Crear canal
+CHANNEL_ID=$(curl -s -X POST http://localhost:8081/api/channels \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $TOKEN" \
+  -d '{"name":"Taller de Algoritmos","category":"ACADEMIC","publicChannel":true}' \
+  | jq -r .id)
+
+echo "Channel ID: $CHANNEL_ID"
+
+# Suscribirse
+curl -s -X POST "http://localhost:8081/api/channels/$CHANNEL_ID/subscribe" \
+  -H "Authorization: Bearer $TOKEN" | jq
+
+# Publicar
+curl -s -X POST "http://localhost:8081/api/channels/$CHANNEL_ID/posts" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $TOKEN" \
+  -d '{"content":"Primera publicacion"}' | jq
+\end{lstlisting}
+
+\begin{exito}[Resultado obtenido]
+\begin{lstlisting}
+{
+  "subscribed": true,
+  "channelId": "d5281a4b-8aa1-4dd4-a9e5-a86fb2425306",
+  "subscriberCount": 1
+}
+
+{
+  "id": "caba6493-5a2d-439c-b0ff-f589c7ff106c",
+  "channelId": "d5281a4b-...",
+  "channelName": "Taller de Algoritmos",
+  "authorDisplayName": "Aaron Ramos",
+  "content": "Primera publicacion",
+  "createdAt": "2026-10-08T04:43:10.626Z"
+}
+\end{lstlisting}
+\end{exito}
+
+\subsection{Listar}
+
+\begin{lstlisting}[language=bash]
+curl -s "http://localhost:8081/api/channels/$CHANNEL_ID/posts?page=0&size=10" \
+  -H "Authorization: Bearer $TOKEN" | jq
+
+curl -s "http://localhost:8081/api/channels" \
+  -H "Authorization: Bearer $TOKEN" | jq
+
+curl -s "http://localhost:8081/api/channels/mine" \
+  -H "Authorization: Bearer $TOKEN" | jq
+
+curl -s "http://localhost:8081/api/channels/subscribed" \
+  -H "Authorization: Bearer $TOKEN" | jq
+\end{lstlisting}
+
+\subsection{Verificar seguridad}
+
+\begin{lstlisting}[language=bash]
+curl -i -X POST http://localhost:8081/api/channels \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Sin auth","category":"OTHER"}'
+\end{lstlisting}
+
+\begin{exito}[Resultado esperado]
+\texttt{HTTP/1.1 403} sin cuerpo. La petición no trae token, por lo que Spring Security la rechaza antes de llegar al controller.
+\end{exito}
+
+\section{Resultado}
+
+\begin{exito}[Estado al cierre]
+\begin{itemize}[leftmargin=*]
+  \item CRUD de canales funcional con control de acceso.
+  \item Suscripciones idempotentes.
+  \item Publicaciones paginadas.
+  \item Filtros: por categoría, por búsqueda de texto, por canal, por usuario.
+  \item Códigos HTTP correctos: 201 al crear, 204 al borrar, 403 sin token, 404 cuando no existe.
+\end{itemize}
+\end{exito}
+
+\textbf{Pendiente para la siguiente sesión:} conectar la publicación de posts con Kafka para emitir eventos y alimentar el sistema de notificaciones.

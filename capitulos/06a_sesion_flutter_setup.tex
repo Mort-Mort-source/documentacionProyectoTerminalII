@@ -1,0 +1,216 @@
+\chapter{Sesión 6a: Setup del cliente Flutter y autenticación}
+\label{ch:sesion6a}
+
+\section{Objetivo de la sesión}
+
+Crear el cliente móvil multiplataforma en Flutter con:
+
+\begin{itemize}[leftmargin=*]
+  \item Estructura de carpetas escalable (core, models, state, screens).
+  \item Cliente HTTP con inyección automática del JWT.
+  \item Almacenamiento seguro del token en el sistema operativo.
+  \item Manejo de estado con \texttt{provider} (\texttt{ChangeNotifier}).
+  \item Pantallas de splash, login y registro funcionales contra el backend real.
+\end{itemize}
+
+\section{Contexto}
+
+Al cierre de la Sesión~\ref{ch:sesion5}, el backend exponía todos los endpoints necesarios (autenticación, canales, suscripciones, publicaciones, contadores). El siguiente paso natural, según la Fase~6 del protocolo, era construir la aplicación móvil multiplataforma con Flutter que consumiera esa API.
+
+Se optó por dividir la Sesión~6 en cuatro sub-sesiones para que cada una entregue algo verificable:
+
+\begin{enumerate}[leftmargin=*]
+  \item \textbf{6a (este capítulo):} setup + autenticación.
+  \item \textbf{6b:} listado, búsqueda, detalle y creación de canales.
+  \item \textbf{6c:} publicaciones dentro del canal y contadores de no leídos.
+  \item \textbf{6d:} notificaciones push reales con Firebase Cloud Messaging.
+\end{enumerate}
+
+\section{Desarrollo}
+
+\subsection{Generación del proyecto}
+
+Se creó el proyecto Flutter con organización \texttt{mx.uam}:
+
+\begin{lstlisting}[language=bash]
+cd ~/Escritorio/notiuam
+flutter create mobile --org mx.uam --project-name notiuam_mobile
+\end{lstlisting}
+
+\subsection{Dependencias}
+
+Se configuraron en \texttt{pubspec.yaml}:
+
+\begin{lstlisting}[language=yaml]
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+  dio: ^5.7.0                       # Cliente HTTP
+  flutter_secure_storage: ^9.2.2    # Token seguro en Keychain / EncryptedSharedPreferences
+  provider: ^6.1.2                  # Manejo de estado
+  intl: ^0.19.0                     # Formato de fechas
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+\end{lstlisting}
+
+\subsection{Estructura de carpetas}
+
+\begin{lstlisting}[language=bash]
+mobile/lib/
+|- main.dart                          (punto de entrada, MultiProvider)
+|- core/
+|  |- constants.dart                  (ApiConfig: baseUrl segun plataforma)
+|  |- token_storage.dart              (guardado seguro del JWT)
+|  `- api_client.dart                 (Dio + interceptor de autenticacion)
+|- models/
+|  |- user.dart
+|  |- auth_response.dart
+|  |- channel.dart
+|  `- post.dart
+|- state/
+|  `- auth_provider.dart              (ChangeNotifier de autenticacion)
+`- screens/
+   |- splash_screen.dart
+   |- login_screen.dart
+   |- register_screen.dart
+   `- home_shell.dart                 (barra de navegacion inferior)
+\end{lstlisting}
+
+\subsection{Decisiones técnicas}
+
+\begin{itemize}[leftmargin=*]
+  \item \textbf{\texttt{dio} en lugar de \texttt{http}.} Dio ofrece interceptores, manejo estructurado de errores (\texttt{DioException}) y mejor configuración de timeouts.
+  \item \textbf{Interceptor de autenticación.} El \texttt{ApiClient} lee el token desde \texttt{TokenStorage} en cada petición y lo añade al header \texttt{Authorization: Bearer <token>} automáticamente. Las pantallas no se preocupan por el token.
+  \item \textbf{\texttt{flutter\_secure\_storage} en lugar de \texttt{shared\_preferences}.} Guarda el JWT en el Keychain de iOS o en \texttt{EncryptedSharedPreferences} de Android. Nunca en texto plano.
+  \item \textbf{\texttt{provider} con \texttt{ChangeNotifier}.} Patrón estándar de la comunidad Flutter. Alternativa a \texttt{bloc} que se descartó por ser más verboso para el tamaño del proyecto.
+  \item \textbf{\texttt{ProxyProvider} para dependencias encadenadas.} El \texttt{ApiClient} depende del \texttt{TokenStorage}, y el \texttt{AuthProvider} del \texttt{ApiClient}. Se usan \texttt{ProxyProvider} y \texttt{ChangeNotifierProxyProvider} para inyectarlos sin duplicar instancias.
+\end{itemize}
+
+\subsection{Detección de plataforma para la URL del backend}
+
+El emulador de Android usa \texttt{10.0.2.2} para referirse al host, mientras que Linux/iOS usan \texttt{localhost}. El archivo \texttt{constants.dart} encapsula la lógica:
+
+\begin{lstlisting}[language=Java]
+class ApiConfig {
+  static String get baseUrl {
+    if (Platform.isAndroid) {
+      return 'http://10.0.2.2:8081';
+    }
+    return 'http://localhost:8081';
+  }
+  static const Duration timeout = Duration(seconds: 15);
+}
+\end{lstlisting}
+
+\subsection{Configuración Android}
+
+Se editó \texttt{android/app/src/main/AndroidManifest.xml} para:
+
+\begin{itemize}[leftmargin=*]
+  \item Añadir el permiso \texttt{android.permission.INTERNET}.
+  \item Habilitar \texttt{android:usesCleartextTraffic="true"} (necesario porque el backend sirve HTTP en desarrollo, no HTTPS).
+\end{itemize}
+
+\begin{aviso}[Advertencia]
+\texttt{usesCleartextTraffic="true"} solo es aceptable en \texttt{debug}. En la versión de producción habrá que exponer el backend por HTTPS con un certificado válido.
+\end{aviso}
+
+\subsection{Cambios a archivos previos}
+
+Ninguno. Esta es una sub-sesión completamente nueva.
+
+\subsection{Problemas encontrados y solución}
+
+\subsubsection{Falta el SDK de Android}
+
+Al primer \texttt{flutter run} apareció:
+
+\begin{lstlisting}[language=bash]
+SDK location not found. Define a valid SDK location with an
+ANDROID_HOME environment variable or by setting the sdk.dir path...
+\end{lstlisting}
+
+\textbf{Solución:} instalar Android Studio por Snap (\texttt{sudo snap install android-studio --classic}), configurar el SDK siguiendo el asistente, y añadir las variables al shell:
+
+\begin{lstlisting}[language=bash]
+export ANDROID_HOME=$HOME/Android/Sdk
+export PATH=$PATH:$ANDROID_HOME/platform-tools
+export PATH=$PATH:$ANDROID_HOME/cmdline-tools/latest/bin
+\end{lstlisting}
+
+\subsubsection{Clang++ no encontraba \texttt{libstdc++}}
+
+Al intentar compilar para Linux desktop:
+
+\begin{lstlisting}[language=bash]
+/usr/bin/ld: no se puede encontrar -lstdc++: No existe el archivo o el directorio
+\end{lstlisting}
+
+El diagnóstico con \texttt{clang++ -v} reveló que clang usa por defecto GCC~14 (el más reciente) mientras que \texttt{g++} apunta a GCC~13. Faltaba el paquete \texttt{libstdc++-14-dev}.
+
+\textbf{Solución:}
+
+\begin{lstlisting}[language=bash]
+sudo apt install -y libstdc++-14-dev
+\end{lstlisting}
+
+\subsubsection{Falta \texttt{libsecret-1-dev}}
+
+El plugin \texttt{flutter\_secure\_storage\_linux} requiere \texttt{libsecret} para acceder al llavero del sistema:
+
+\begin{lstlisting}[language=bash]
+The following required packages were not found:
+  - libsecret-1>=0.18.4
+\end{lstlisting}
+
+\textbf{Solución:}
+
+\begin{lstlisting}[language=bash]
+sudo apt install -y libsecret-1-dev
+\end{lstlisting}
+
+\subsubsection{Archivos \texttt{api\_client.dart} y \texttt{token\_storage.dart} con contenido duplicado}
+
+Ambos archivos contenían el mismo bloque de \texttt{constants.dart} por un error de copiado. La compilación falló con errores de tipo \texttt{'ApiClient' isn't a type} y \texttt{'TokenStorage' isn't a type}.
+
+\textbf{Solución:} sobrescribir ambos archivos con el contenido correcto mediante una escritura completa del archivo para garantizar que no quedaran partes duplicadas.
+
+\section{Verificación}
+
+\subsection{Arranque}
+
+\begin{lstlisting}[language=bash]
+cd ~/Escritorio/notiuam/mobile
+flutter clean
+flutter run -d linux
+\end{lstlisting}
+
+La primera compilación tarda 1--2 minutos. Al terminar se abre una ventana nativa con la app NotiUAM.
+
+\subsection{Flujo verificado}
+
+\begin{enumerate}[leftmargin=*]
+  \item \textbf{Splash} visible 1 segundo mientras \texttt{AuthProvider.bootstrap()} verifica si hay token guardado.
+  \item \textbf{Login} con \texttt{aaron@uam.mx} / \texttt{password123} → entra al \texttt{HomeShell}.
+  \item \textbf{HomeShell} con 4 pestañas: Explorar, Mis canales, Suscritos, Perfil.
+  \item \textbf{Logout} desde el AppBar → vuelve al login y limpia el token del storage.
+  \item \textbf{Persistencia:} cerrar la app y reabrirla mantiene la sesión activa (token en Keychain / EncryptedSharedPreferences).
+\end{enumerate}
+
+\section{Resultado}
+
+\begin{exito}[Estado al cierre]
+\begin{itemize}[leftmargin=*]
+  \item Proyecto Flutter funcional en Linux desktop (y listo para Android).
+  \item Cliente HTTP con JWT automático.
+  \item Almacenamiento seguro del token.
+  \item Login y registro funcionales contra el backend real.
+  \item Arquitectura de estado escalable para las próximas sub-sesiones.
+\end{itemize}
+\end{exito}
+
+\textbf{Pendiente para la siguiente sub-sesión:} reemplazar los placeholders del \texttt{HomeShell} por pantallas reales de canales.

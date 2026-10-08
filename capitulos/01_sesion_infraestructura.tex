@@ -1,0 +1,256 @@
+\lstdefinelanguage{yaml}{
+  morekeywords={true,false,null,y,yes,no,on,off},
+  sensitive=false,
+  morecomment=[l]{\#},
+  morestring=[b]",
+  morestring=[b]',
+  alsoletter={-:},
+  moredelim=[is][\color{black}]{\{}{\}},
+  moredelim=[is][\color{black}]{[}{]},
+  moredelim=[s][\itshape]{:}{\ },
+  moredelim=[s][\itshape]{-}{\ }
+}
+
+\chapter{Sesión 1: Infraestructura base con Docker}
+\label{ch:sesion1}
+
+\section{Objetivo de la sesión}
+
+Levantar un entorno de desarrollo reproducible con todos los servicios de infraestructura que NotiUAM necesita, orquestados con Docker Compose:
+\begin{itemize}[leftmargin=*]
+  \item \textbf{PostgreSQL 16} para persistencia relacional.
+  \item \textbf{Redis 7} para caché y datos temporales.
+  \item \textbf{Apache Kafka 3.7} (modo KRaft, sin Zookeeper) como broker de eventos.
+  \item \textbf{Kafka UI} para inspeccionar topics y mensajes desde el navegador.
+\end{itemize}
+
+\section{Contexto}
+
+El protocolo describe una arquitectura pub-sub con Kafka como broker central, PostgreSQL y Redis para persistencia y caché, y contenerización con Docker para reproducibilidad (secciones 2.3 y 6.2.3). Antes de escribir una sola línea de código Java o Dart, necesitábamos poder levantar esa infraestructura con un solo comando.
+
+\section{Desarrollo}
+
+\subsection{Estructura del repositorio}
+
+Se creó el siguiente árbol en la raíz del proyecto:
+
+\begin{lstlisting}[language=bash]
+notiuam/
+|- docker-compose.yml
+|- .env
+|- .gitignore
+|- README.md
+|- backend
+\end{lstlisting}
+
+
+\subsection{Variables de entorno (\texttt{.env})}
+
+Se centralizaron credenciales y puertos en un archivo \texttt{.env} para no incrustarlos en el compose:
+
+\begin{lstlisting}[language=bash]
+POSTGRES_DB=notiuam
+POSTGRES_USER=notiuam
+POSTGRES_PASSWORD=notiuam_dev_pass
+POSTGRES_PORT=5432
+
+REDIS_PORT=6379
+
+KAFKA_PORT=9092
+KAFKA_UI_PORT=8080
+
+BACKEND_PORT=8081
+JWT_SECRET=change_me_in_prod_please_use_a_very_long_random_secret_at_least_256_bits
+JWT_EXPIRATION_MS=3600000
+JWT_REFRESH_EXPIRATION_MS=604800000
+\end{lstlisting}
+
+\begin{aviso}[Aviso]
+El \texttt{JWT\_SECRET} de ejemplo \textbf{no debe usarse en producción}. Se reemplazará por un secreto de al menos 256 bits generado aleatoriamente.
+\end{aviso}
+
+\subsection{\texttt{docker-compose.yml}}
+
+Se definieron cuatro servicios en una red interna \texttt{notiuam-net}, con volúmenes persistentes para cada uno.
+
+\begin{lstlisting}[language=bash]
+networks:
+  notiuam-net:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  redis_data:
+  kafka_data:
+
+services:
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: notiuam-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "${POSTGRES_PORT}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks: [notiuam-net]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: notiuam-redis
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "${REDIS_PORT}:6379"
+    volumes:
+      - redis_data:/data
+    networks: [notiuam-net]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  kafka:
+    image: apache/kafka:3.7.0
+    container_name: notiuam-kafka
+    restart: unless-stopped
+    ports:
+      - "${KAFKA_PORT}:9092"
+    environment:
+      KAFKA_NODE_ID: "1"
+      KAFKA_PROCESS_ROLES: "broker,controller"
+      KAFKA_LISTENERS: "PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093"
+      KAFKA_ADVERTISED_LISTENERS: "PLAINTEXT://localhost:${KAFKA_PORT}"
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: "CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT"
+      KAFKA_INTER_BROKER_LISTENER_NAME: "PLAINTEXT"
+      KAFKA_CONTROLLER_LISTENER_NAMES: "CONTROLLER"
+      KAFKA_CONTROLLER_QUORUM_VOTERS: "1@kafka:9093"
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: "1"
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: "1"
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: "1"
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: "0"
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      KAFKA_NUM_PARTITIONS: "3"
+    volumes:
+      - kafka_data:/var/lib/kafka/data
+    networks: [notiuam-net]
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-cluster.sh cluster-id --bootstrap-server localhost:9092 || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: notiuam-kafka-ui
+    restart: unless-stopped
+    depends_on:
+      kafka:
+        condition: service_healthy
+    ports:
+      - "${KAFKA_UI_PORT}:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: notiuam-local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
+      KAFKA_CLUSTERS_0_READONLY: "false"
+    networks: [notiuam-net]
+\end{lstlisting}
+
+\subsection{Decisión técnica: imagen de Kafka}
+
+\begin{aviso}[Cambio respecto al plan original]
+Inicialmente se usó \texttt{bitnami/kafka:3.7}. Sin embargo, \textbf{Bitnami retiró su catálogo público de Docker Hub en septiembre de 2025}, por lo que el \texttt{docker pull} fallaba con \texttt{manifest unknown}. Se migró a la imagen oficial \texttt{apache/kafka:3.7.0}, mantenida por la Apache Software Foundation.
+
+El cambio implicó ajustar los nombres de las variables de entorno:
+\begin{itemize}[leftmargin=*]
+  \item Bitnami usaba el prefijo \texttt{KAFKA\_CFG\_*} (p.\,ej. \texttt{KAFKA\_CFG\_NODE\_ID}).
+  \item Apache usa el prefijo \texttt{KAFKA\_*} (p.\,ej. \texttt{KAFKA\_NODE\_ID}).
+\end{itemize}
+\end{aviso}
+
+\subsection{Modo KRaft en lugar de Zookeeper}
+
+Kafka 3.7 permite operar sin Zookeeper mediante \textbf{KRaft} (Kafka Raft). Se eligió este modo porque:
+\begin{itemize}[leftmargin=*]
+  \item Reduce el número de contenedores (uno en lugar de dos).
+  \item Es el modo recomendado desde Kafka 3.0 y el único soportado a partir de Kafka 4.x.
+  \item Simplifica el arranque en un solo nodo combinado \textit{broker + controller}.
+\end{itemize}
+
+\section{Verificación}
+
+\subsection{Levantar los servicios}
+
+\begin{lstlisting}[language=bash]
+cd ~/Escritorio/notiuam
+cp .env .env.example   # solo la primera vez, para tener un ejemplo
+docker compose up -d
+docker compose ps
+\end{lstlisting}
+
+\begin{exito}[Resultado esperado]
+Cuatro contenedores en estado \texttt{Up (healthy)}:
+\begin{lstlisting}[language=bash]
+NAME                STATUS
+notiuam-postgres    Up (healthy)
+notiuam-redis       Up (healthy)
+notiuam-kafka       Up (healthy)
+notiuam-kafka-ui    Up
+\end{lstlisting}
+\end{exito}
+
+\subsection{PostgreSQL}
+
+\begin{lstlisting}[language=bash]
+docker exec -it notiuam-postgres psql -U notiuam -d notiuam -c "\l"
+\end{lstlisting}
+
+Debe listar la base \texttt{notiuam}.
+
+\subsection{Redis}
+
+\begin{lstlisting}[language=bash]
+docker exec -it notiuam-redis redis-cli ping
+# Respuesta esperada: PONG
+\end{lstlisting}
+
+\subsection{Kafka}
+
+\begin{lstlisting}[language=bash]
+# Crear topic de prueba
+docker exec -it notiuam-kafka /opt/kafka/bin/kafka-topics.sh \
+  --bootstrap-server localhost:9092 \
+  --create --topic test-topic --partitions 1 --replication-factor 1
+
+# Listar topics
+docker exec -it notiuam-kafka /opt/kafka/bin/kafka-topics.sh \
+  --bootstrap-server localhost:9092 --list
+# Debe aparecer: test-topic
+\end{lstlisting}
+
+\subsection{Kafka UI}
+
+Abrir \url{http://localhost:8080} en el navegador. Debe aparecer el cluster \texttt{notiuam-local} y el topic \texttt{test-topic} creado en el paso anterior.
+
+\section{Resultado}
+
+\begin{exito}[Estado al cierre]
+\begin{itemize}[leftmargin=*]
+  \item Infraestructura base funcionando en Docker.
+  \item Volúmenes persistentes para PostgreSQL, Redis y Kafka.
+  \item Healthchecks configurados para detectar servicios listos.
+  \item Archivo \texttt{.gitignore} y \texttt{README.md} en su lugar.
+\end{itemize}
+\end{exito}
+
+\textbf{Pendiente para la siguiente sesión:} crear el proyecto backend con Spring Boot y conectarlo a estos servicios.

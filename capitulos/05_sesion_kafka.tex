@@ -1,0 +1,317 @@
+\chapter{Sesión 5: Kafka productor, consumidor y notificaciones}
+\label{ch:sesion5}
+
+\section{Objetivo de la sesión}
+
+Convertir la publicación de avisos en un flujo de eventos distribuido:
+
+\begin{itemize}[leftmargin=*]
+  \item Publicar un evento \texttt{PostCreatedEvent} en Kafka cada vez que se crea un post.
+  \item Consumir ese evento y notificar a los suscriptores del canal (excepto al autor).
+  \item Mantener contadores de publicaciones no leídas por usuario en Redis.
+  \item Exponer endpoints para consultar y limpiar esos contadores.
+\end{itemize}
+
+\section{Contexto}
+
+La Sesión~\ref{ch:sesion4} dejó los endpoints de canales y publicaciones funcionando, pero \textbf{las notificaciones eran síncronas y locales}: el post se guardaba en PostgreSQL y la petición HTTP terminaba sin avisar a nadie. Este diseño contradice el modelo pub-sub descrito en el marco teórico (secciones 2.2 y 2.3.1).
+
+Se necesitaba \textbf{desacoplar} la publicación de la notificación: el emisor del post no debe saber quién lo va a leer ni cuándo.
+
+\section{Desarrollo}
+
+\subsection{Estructura creada}
+
+\begin{lstlisting}[language=bash]
+src/main/java/mx/uam/notiuam/
+|- config/
+|  `- KafkaConfig.java                  (definicion del topic)
+|- event/
+|  |- PostCreatedEvent.java             (payload)
+|  |- PostEventPublisher.java           (productor)
+|  `- PostNotificationConsumer.java     (consumidor)
+|- service/
+|  `- UnreadCounterService.java         (contadores en Redis)
+`- controller/
+   `- MeController.java                 (endpoints de no leidos)
+\end{lstlisting}
+
+\subsection{Decisiones técnicas}
+
+\begin{itemize}[leftmargin=*]
+  \item \textbf{Topic con 3 particiones.} Permite paralelismo horizontal si más adelante se despliegan varias instancias del consumidor.
+  \item \textbf{Clave de mensaje = \texttt{channelId}.} Todos los eventos de un mismo canal caen en la misma partición y se procesan en orden cronológico.
+  \item \textbf{Consumer group dedicado} (\texttt{notiuam-notifications}). Permite escalar el consumidor sin perder eventos.
+  \item \textbf{Contadores en Redis como hash.} Cada usuario tiene un hash \texttt{notiuam:unread:<userId>} donde cada campo es un \texttt{channelId} y el valor es el contador.
+  \item \textbf{Auto-creación de topic.} El bean \texttt{NewTopic} hace que Spring Boot cree el topic al arrancar si no existe, sin depender de scripts externos.
+  \item \textbf{No notificar al autor.} Aunque el autor sea suscriptor de su propio canal, no recibe notificación de sus propios posts.
+\end{itemize}
+
+\subsection{Componentes clave}
+
+\subsubsection{\texttt{KafkaConfig}}
+
+Define el topic como bean:
+
+\begin{lstlisting}[language=java]
+@Configuration
+public class KafkaConfig {
+    public static final String POSTS_TOPIC = "notiuam.posts";
+
+    @Bean
+    public NewTopic postsTopic() {
+        return TopicBuilder.name(POSTS_TOPIC)
+                .partitions(3)
+                .replicas(1)
+                .build();
+    }
+}
+\end{lstlisting}
+
+\subsubsection{\texttt{PostCreatedEvent}}
+
+Record inmutable con todo lo necesario para notificar: id del post, canal, autor y contenido.
+
+\begin{lstlisting}[language=java]
+public record PostCreatedEvent(
+        UUID postId,
+        UUID channelId,
+        String channelName,
+        UUID authorId,
+        String authorDisplayName,
+        String content,
+        Instant createdAt
+) {}
+\end{lstlisting}
+
+\subsubsection{\texttt{PostEventPublisher}}
+
+Envía el evento de forma asíncrona con \texttt{KafkaTemplate}. Usa \texttt{whenComplete} para loguear el resultado o el error sin bloquear la transacción.
+
+\begin{lstlisting}[language=java]
+public void publishPostCreated(PostCreatedEvent event) {
+    kafkaTemplate.send(KafkaConfig.POSTS_TOPIC,
+                       event.channelId().toString(),
+                       event)
+            .whenComplete((result, ex) -> {
+                if (ex != null) {
+                    log.error("Error publicando evento: {}", ex.getMessage());
+                } else {
+                    log.info("Evento publicado: post={} partition={} offset={}",
+                        event.postId(),
+                        result.getRecordMetadata().partition(),
+                        result.getRecordMetadata().offset());
+                }
+            });
+}
+\end{lstlisting}
+
+\subsubsection{\texttt{UnreadCounterService}}
+
+Usa \texttt{StringRedisTemplate} para mantener contadores por usuario y canal.
+
+\begin{lstlisting}[language=java]
+public void increment(UUID userId, UUID channelId) {
+    redis.opsForHash().increment(KEY_PREFIX + userId, channelId.toString(), 1);
+}
+
+public Map<String, Long> getAllCounts(UUID userId) {
+    Map<Object, Object> raw = redis.opsForHash().entries(KEY_PREFIX + userId);
+    return raw.entrySet().stream().collect(Collectors.toMap(
+            e -> e.getKey().toString(),
+            e -> Long.parseLong(e.getValue().toString())
+    ));
+}
+\end{lstlisting}
+
+\subsubsection{\texttt{PostNotificationConsumer}}
+
+El listener de Kafka. Por cada evento:
+
+\begin{enumerate}[leftmargin=*]
+  \item Busca los suscriptores del canal.
+  \item Excluye al autor.
+  \item Incrementa el contador de no leídos de cada suscriptor en Redis.
+  \item Simula el envío de push (en la Sesión 6/7 se reemplazará con FCM real).
+\end{enumerate}
+
+\begin{lstlisting}[language=java]
+@KafkaListener(
+        topics = KafkaConfig.POSTS_TOPIC,
+        groupId = "notiuam-notifications"
+)
+public void onPostCreated(PostCreatedEvent event) {
+    List<Subscription> subs = subscriptionRepository
+            .findByChannelId(event.channelId());
+
+    for (Subscription sub : subs) {
+        if (sub.getUserId().equals(event.authorId())) continue;
+        unreadCounters.increment(sub.getUserId(), event.channelId());
+        log.info("[PUSH-SIMULADO] -> user={} | {}", sub.getUserId(), event.channelName());
+    }
+}
+\end{lstlisting}
+
+\subsubsection{Modificación a \texttt{PostService}}
+
+\begin{aviso}[Cambio a un archivo previo]
+El \texttt{PostService} de la Sesión~\ref{ch:sesion4} se modificó para publicar el evento después de guardar el post en PostgreSQL.
+
+Se inyectó \texttt{PostEventPublisher} en el constructor y se añadió la llamada al publisher antes del \texttt{return}:
+
+\begin{lstlisting}[language=java]
+p = postRepository.save(p);
+
+postEventPublisher.publishPostCreated(new PostCreatedEvent(
+        p.getId(), c.getId(), c.getName(),
+        author.getId(), author.getDisplayName(),
+        p.getContent(), p.getCreatedAt()
+));
+
+return toResponse(p);
+\end{lstlisting}
+
+Con esto, el post se persiste primero y solo después se emite el evento. Si Kafka falla, el post sigue existiendo y el error solo se registra en los logs.
+\end{aviso}
+
+\subsubsection{\texttt{MeController}}
+
+Expone los endpoints para consultar y limpiar los contadores:
+
+\begin{lstlisting}[language=java]
+@GetMapping("/unread")            // -> Map<channelId, count>
+@DeleteMapping("/unread/{id}")    // -> 204 No Content
+\end{lstlisting}
+
+\subsection{Cambios a archivos previos}
+
+\begin{itemize}[leftmargin=*]
+  \item \texttt{PostService.java}: se añadió el campo \texttt{postEventPublisher} y una llamada a \texttt{publishPostCreated} dentro de \texttt{create()}.
+  \item \texttt{application.yml}: ya tenía la configuración de Kafka desde la Sesión~\ref{ch:sesion2}; no se tocó.
+  \item \texttt{GlobalExceptionHandler}: sin cambios.
+\end{itemize}
+
+\subsection{Problemas encontrados y solución}
+
+\subsubsection{Método \texttt{create} duplicado en \texttt{PostService}}
+
+Al editar el archivo, el método nuevo se pegó debajo del viejo en lugar de reemplazarlo. La compilación falló con:
+
+\begin{lstlisting}[language=bash]
+method create(UUID, PostCreateRequest) is already defined
+\end{lstlisting}
+
+\textbf{Solución:} eliminar el método viejo, dejar solo el nuevo que incluye la publicación a Kafka. Este error arrastró decenas de falsos positivos de Lombok (\texttt{cannot find symbol: method getId()}), que desaparecieron al corregir la duplicación.
+
+\subsubsection{\texttt{MeController} faltante}
+
+El endpoint \texttt{/api/me/unread} devolvía \texttt{HTTP 403} sin cuerpo. La causa: el archivo \texttt{MeController.java} no había sido creado, por lo que Spring Security interceptaba la ruta con \texttt{anyRequest().authenticated()} y la rechazaba.
+
+\textbf{Solución:} crear el archivo, reiniciar el backend.
+
+\section{Verificación}
+
+\subsection{Preparar dos usuarios}
+
+\begin{lstlisting}[language=bash]
+# Usuario A (autor)
+TOKEN_A=$(curl -s -X POST http://localhost:8081/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"aaron@uam.mx","password":"password123"}' | jq -r .accessToken)
+
+# Usuario B (suscriptor)
+TOKEN_B=$(curl -s -X POST http://localhost:8081/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"betzabet@uam.mx","password":"password123"}' | jq -r .accessToken)
+\end{lstlisting}
+
+\subsection{Publicar y observar los logs}
+
+Crear canal, suscribir a ambos usuarios, publicar con el usuario A:
+
+\begin{lstlisting}[language=bash]
+CHANNEL_ID=$(curl -s -X POST http://localhost:8081/api/channels \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $TOKEN_A" \
+  -d '{"name":"Avisos de Ingenieria","category":"ADMINISTRATIVE","publicChannel":true}' \
+  | jq -r .id)
+
+curl -s -X POST "http://localhost:8081/api/channels/$CHANNEL_ID/subscribe" \
+  -H "Authorization: Bearer $TOKEN_A" > /dev/null
+
+curl -s -X POST "http://localhost:8081/api/channels/$CHANNEL_ID/subscribe" \
+  -H "Authorization: Bearer $TOKEN_B" > /dev/null
+
+curl -s -X POST "http://localhost:8081/api/channels/$CHANNEL_ID/posts" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $TOKEN_A" \
+  -d '{"content":"Prueba de Kafka"}' | jq
+\end{lstlisting}
+
+\begin{exito}[Logs obtenidos]
+\begin{lstlisting}[language=bash]
+Evento publicado: post=ed496ba0... canal=f4c3bbdd... partition=1 offset=0
+Kafka event recibido: post=ed496ba0... canal=Avisos de Ingenieria
+[PUSH-SIMULADO] -> user=b8cc6002... | Avisos de Ingenieria | "Prueba de Kafka"
+Notificaciones procesadas: 1 de 2 suscriptores
+\end{lstlisting}
+
+El \texttt{1 de 2} confirma que el autor (Aaron) no se notifica a sí mismo, y que el otro suscriptor (Betzabet) sí recibe el aviso.
+\end{exito}
+
+\subsection{Consultar y limpiar contadores}
+
+\begin{lstlisting}[language=bash]
+# Betzabet consulta sus no leidos
+curl -s http://localhost:8081/api/me/unread \
+  -H "Authorization: Bearer $TOKEN_B" | jq
+# -> { "f4c3bbdd-...": 1 }
+
+# Aaron no deberia tener nada
+curl -s http://localhost:8081/api/me/unread \
+  -H "Authorization: Bearer $TOKEN_A" | jq
+# -> {}
+
+# Betzabet marca como leido
+curl -s -X DELETE "http://localhost:8081/api/me/unread/$CHANNEL_ID" \
+  -H "Authorization: Bearer $TOKEN_B" | jq
+
+# Ya no debe aparecer
+curl -s http://localhost:8081/api/me/unread \
+  -H "Authorization: Bearer $TOKEN_B" | jq
+# -> {}
+\end{lstlisting}
+
+\subsection{Verificación en Redis}
+
+\begin{lstlisting}[language=bash]
+docker exec -it notiuam-redis redis-cli
+
+# Dentro del CLI
+KEYS notiuam:unread:*
+HGETALL notiuam:unread:<userId>
+exit
+\end{lstlisting}
+
+\subsection{Verificación en Kafka UI}
+
+En \url{http://localhost:8080}:
+
+\begin{itemize}[leftmargin=*]
+  \item \textbf{Topics} $\rightarrow$ \texttt{notiuam.posts} $\rightarrow$ 3 particiones con mensajes.
+  \item \textbf{Consumer Groups} $\rightarrow$ \texttt{notiuam-notifications} $\rightarrow$ offsets por partición con \texttt{LAG = 0}.
+\end{itemize}
+
+\section{Resultado}
+
+\begin{exito}[Estado al cierre]
+\begin{itemize}[leftmargin=*]
+  \item Publicación de posts $\rightarrow$ evento en Kafka $\rightarrow$ consumer $\rightarrow$ contador en Redis, todo automático.
+  \item Arquitectura pub-sub real (desacoplamiento entre productor y consumidor).
+  \item Persistencia doble: PostgreSQL para los posts, Redis para los contadores.
+  \item Endpoints \texttt{/api/me/unread} funcionales.
+  \item Base lista para integrar notificaciones push reales con FCM en la Sesión 6.
+\end{itemize}
+\end{exito}
+
+\textbf{Pendiente para la siguiente sesión:} cliente móvil en Flutter (login, exploración de canales, suscripción, publicación, contadores, notificaciones push reales).

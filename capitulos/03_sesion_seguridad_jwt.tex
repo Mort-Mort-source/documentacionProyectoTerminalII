@@ -1,0 +1,233 @@
+\chapter{Sesión 3: Seguridad JWT y autenticación}
+\label{ch:sesion3}
+
+\section{Objetivo de la sesión}
+
+Implementar el sistema de autenticación basado en JSON Web Tokens (JWT), cubriendo:
+
+\begin{itemize}[leftmargin=*]
+  \item Registro de usuarios (\texttt{POST /api/auth/register}).
+  \item Inicio de sesión (\texttt{POST /api/auth/login}).
+  \item Renovación de token (\texttt{POST /api/auth/refresh}).
+  \item Filtro que valida el JWT en cada petición autenticada.
+  \item Configuración de Spring Security en modo \textit{stateless}.
+  \item Hash de contraseñas con BCrypt.
+\end{itemize}
+
+\section{Contexto}
+
+En la Sesión~\ref{ch:sesion2} el backend arrancaba pero Spring Security generaba una contraseña temporal y todos los endpoints (salvo los públicos por defecto) quedaban bloqueados con \texttt{inMemoryUserDetailsManager}. No existía forma de crear usuarios en la base de datos ni de autenticarse contra ella.
+
+\section{Desarrollo}
+
+\subsection{Estructura creada}
+
+\begin{lstlisting}[language=bash]
+src/main/java/mx/uam/notiuam/
+|- config/
+|  `- SecurityConfig.java
+|- security/
+|  |- JwtService.java
+|  |- JwtAuthenticationFilter.java
+|  `- UserDetailsServiceImpl.java
+|- dto/auth/
+|  |- RegisterRequest.java
+|  |- LoginRequest.java
+|  |- RefreshRequest.java
+|  `- AuthResponse.java
+|- service/
+|  `- AuthService.java
+|- controller/
+|  `- AuthController.java
+`- exception/
+   `- GlobalExceptionHandler.java
+\end{lstlisting}
+
+\subsection{Decisiones técnicas}
+
+\begin{itemize}[leftmargin=*]
+  \item \textbf{JWT stateless.} No se usan sesiones HTTP. Toda la identidad viaja en el token firmado con HMAC-SHA256.
+  \item \textbf{Dos tipos de token.} \textit{Access token} de 1 hora y \textit{refresh token} de 7 días. El claim \texttt{type} distingue uno del otro.
+  \item \textbf{BCrypt.} Las contraseñas se almacenan siempre hasheadas, nunca en claro.
+  \item \textbf{Alias \texttt{ROLE\_}.} Los roles se exponen como \texttt{ROLE\_STUDENT}, \texttt{ROLE\_PROFESSOR}, \texttt{ROLE\_ADMIN} para que \texttt{@PreAuthorize} funcione sin configuración extra.
+  \item \textbf{CORS abierto en desarrollo.} Se permite cualquier origen (\texttt{*}) para que la app Flutter pueda probar sin configuración adicional. En producción se restringirá.
+\end{itemize}
+
+\subsection{Componentes clave}
+
+\subsubsection{\texttt{JwtService}}
+
+Genera, firma y valida tokens. Métodos principales:
+
+\begin{lstlisting}[language=java]
+public String generateAccessToken(User user);
+public String generateRefreshToken(User user);
+public Claims parse(String token);
+public boolean isValid(String token);
+public long getAccessExpirationMs();
+\end{lstlisting}
+
+El claim \texttt{subject} guarda el \texttt{UUID} del usuario. Otros claims: \texttt{email}, \texttt{role}, \texttt{type} (\texttt{access} o \texttt{refresh}).
+
+\subsubsection{\texttt{JwtAuthenticationFilter}}
+
+Extiende \texttt{OncePerRequestFilter}. En cada petición:
+\begin{enumerate}[leftmargin=*]
+  \item Lee el header \texttt{Authorization: Bearer <token>}.
+  \item Valida el token con \texttt{JwtService}.
+  \item Extrae \texttt{userId}, \texttt{email}, \texttt{role}.
+  \item Coloca un \texttt{UsernamePasswordAuthenticationToken} en el \texttt{SecurityContext}.
+  \item El principal es un record \texttt{AuthenticatedUser(UUID id, String email, String role)}.
+\end{enumerate}
+
+\begin{nota}[Nota]
+Si el token no es válido o falta, el filtro simplemente deja pasar la petición sin autenticación. La decisión de permitirla o rechazarla la toma la cadena de filtros de Spring Security según el matcher de la URL.
+\end{nota}
+
+\subsubsection{\texttt{SecurityConfig}}
+
+Define:
+\begin{itemize}[leftmargin=*]
+  \item \texttt{PasswordEncoder} con BCrypt.
+  \item \texttt{AuthenticationManager} respaldado por \texttt{DaoAuthenticationProvider} + \texttt{UserDetailsServiceImpl}.
+  \item \texttt{SecurityFilterChain}:
+    \begin{itemize}
+      \item CSRF deshabilitado (API stateless).
+      \item Sesiones en \texttt{STATELESS}.
+      \item \texttt{/api/auth/**}, Swagger y \texttt{/actuator/health} públicos.
+      \item Todo lo demás, autenticado.
+      \item \texttt{JwtAuthenticationFilter} antes de \texttt{UsernamePasswordAuthenticationFilter}.
+    \end{itemize}
+\end{itemize}
+
+\subsubsection{\texttt{AuthService}}
+
+Contiene la lógica de negocio:
+
+\begin{itemize}[leftmargin=*]
+  \item \texttt{register}: valida unicidad del email, hashea la contraseña, guarda y devuelve par de tokens.
+  \item \texttt{login}: usa el \texttt{AuthenticationManager} para validar credenciales, luego emite tokens.
+  \item \texttt{refresh}: valida el refresh token, verifica el claim \texttt{type=refresh} y emite un nuevo par.
+\end{itemize}
+
+\subsection{\texttt{AuthController}}
+
+Expone los tres endpoints bajo \texttt{/api/auth}:
+
+\begin{lstlisting}[language=java]
+@PostMapping("/register")  // 201 Created
+@PostMapping("/login")     // 200 OK
+@PostMapping("/refresh")   // 200 OK
+\end{lstlisting}
+
+Todas las peticiones usan \texttt{@Valid} para disparar la validación de los DTOs.
+
+\subsection{Manejo global de errores}
+
+\texttt{GlobalExceptionHandler} con \texttt{@RestControllerAdvice} convierte:
+
+\begin{itemize}[leftmargin=*]
+  \item \texttt{IllegalArgumentException} $\rightarrow$ \texttt{400 Bad Request}.
+  \item \texttt{MethodArgumentNotValidException} $\rightarrow$ \texttt{400} con detalle de campos inválidos.
+\end{itemize}
+
+Respuesta uniforme:
+
+\begin{lstlisting}
+{
+  "timestamp": "2026-10-05T22:30:00Z",
+  "status": 400,
+  "error": "Bad Request",
+  "message": "El correo ya esta registrado"
+}
+\end{lstlisting}
+
+\subsection{Ajustes al \texttt{application.yml}}
+
+Se limpiaron dos warnings que aparecieron en la Sesión~\ref{ch:sesion2}:
+
+\begin{itemize}[leftmargin=*]
+  \item Se eliminó \texttt{hibernate.dialect} (Hibernate 7 lo autodetecta).
+  \item Se añadió \texttt{spring.data.redis.repositories.enabled: false} para evitar el escaneo de repositorios Redis.
+\end{itemize}
+
+\section{Verificación}
+
+\subsection{Registro}
+
+\begin{lstlisting}[language=bash]
+curl -s -X POST http://localhost:8081/api/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "aaron@uam.mx",
+    "password": "password123",
+    "displayName": "Aaron Ramos",
+    "role": "STUDENT"
+  }' | jq
+\end{lstlisting}
+
+\begin{exito}[Respuesta esperada]
+Un JSON con \texttt{accessToken}, \texttt{refreshToken}, \texttt{tokenType}, \texttt{expiresInMs} y un objeto \texttt{user} con los datos del usuario creado.
+\end{exito}
+
+\subsection{Login}
+
+\begin{lstlisting}[language=bash]
+curl -s -X POST http://localhost:8081/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"aaron@uam.mx","password":"password123"}' | jq
+\end{lstlisting}
+
+Debe devolver un par de tokens nuevos.
+
+\subsection{Refresh}
+
+\begin{lstlisting}[language=bash]
+REFRESH=$(curl -s -X POST http://localhost:8081/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"aaron@uam.mx","password":"password123"}' | jq -r .refreshToken)
+
+curl -s -X POST http://localhost:8081/api/auth/refresh \
+  -H "Content-Type: application/json" \
+  -d "{\"refreshToken\":\"$REFRESH\"}" | jq
+\end{lstlisting}
+
+Debe emitir un nuevo par de tokens.
+
+\subsection{Verificar hash en PostgreSQL}
+
+\begin{lstlisting}[language=bash]
+docker exec -it notiuam-postgres psql -U notiuam -d notiuam \
+  -c "SELECT email, display_name, role,
+             LEFT(password_hash, 7) AS hash_prefix
+      FROM users;"
+\end{lstlisting}
+
+\begin{exito}[Resultado esperado]
+El prefijo del hash debe ser \texttt{\$2a\$10\$} (BCrypt). Nunca aparece la contraseña en claro.
+\end{exito}
+
+\subsection{Comprobar que arranca sin contraseña temporal}
+
+Al reiniciar el backend ya \textbf{no} debe aparecer el mensaje:
+
+\begin{lstlisting}[language=bash]
+Using generated security password: ...
+\end{lstlisting}
+
+Si aparece, revisar que \texttt{UserDetailsServiceImpl} esté en el paquete \texttt{mx.uam.notiuam.security} y que la dependencia \texttt{spring-boot-starter-security} esté en el \texttt{pom.xml}.
+
+\section{Resultado}
+
+\begin{exito}[Estado al cierre]
+\begin{itemize}[leftmargin=*]
+  \item Registro, login y refresh funcionales.
+  \item Autenticación stateless con JWT (access 1h + refresh 7d).
+  \item Contraseñas hasheadas con BCrypt.
+  \item Roles expuestos como \texttt{ROLE\_*} para usar \texttt{@PreAuthorize}.
+  \item CORS listo para el cliente Flutter.
+  \item Manejo global de errores unificado.
+\end{itemize}
+\end{exito}
+
+\textbf{Pendiente para la siguiente sesión:} endpoints de canales, suscripciones y publicaciones, usando el \texttt{AuthenticatedUser} del \texttt{SecurityContext} para identificar al emisor.

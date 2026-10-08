@@ -1,0 +1,89 @@
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[spanish,es-lcroman,es-noquoting]{babel}
+\usepackage{geometry}
+\geometry{letterpaper,margin=2.5cm}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage{tcolorbox}
+\tcbuselibrary{breakable, skins}
+\usepackage{hyperref}
+\usepackage{enumitem}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+
+% --- Colores ---
+\definecolor{codebg}{RGB}{248,248,248}
+\definecolor{codekey}{RGB}{0,92,175}
+\definecolor{codestr}{RGB}{163,21,21}
+\definecolor{codecom}{RGB}{0,128,0}
+\definecolor{accent}{RGB}{0,120,180}
+\definecolor{warnbg}{RGB}{255,248,220}
+\definecolor{warnborder}{RGB}{230,180,0}
+\definecolor{okbg}{RGB}{232,245,233}
+\definecolor{okborder}{RGB}{56,142,60}
+
+% --- Estilo de listings ---
+\lstdefinestyle{code}{
+  backgroundcolor=\color{codebg},
+  basicstyle=\ttfamily\small,
+  keywordstyle=\color{codekey}\bfseries,
+  stringstyle=\color{codestr},
+  commentstyle=\color{codecom}\itshape,
+  numberstyle=\tiny\color{gray},
+  numbers=left,
+  numbersep=8pt,
+  showstringspaces=false,
+  breaklines=true,
+  frame=single,
+  rulecolor=\color{gray!30},
+  tabsize=2,
+  captionpos=b,
+  xleftmargin=12pt,
+  xrightmargin=6pt
+}
+\lstset{style=code}
+
+% --- Cajas informativas ---
+\newtcolorbox{nota}[1][]{
+  colback=blue!5, colframe=accent,
+  boxrule=0.5pt, arc=2pt,
+  left=6pt, right=6pt, top=4pt, bottom=4pt,
+  breakable, title=#1
+}
+\newtcolorbox{aviso}[1][]{
+  colback=warnbg, colframe=warnborder,
+  boxrule=0.6pt, arc=2pt,
+  left=6pt, right=6pt, top=4pt, bottom=4pt,
+  breakable, title=#1
+}
+\newtcolorbox{exito}[1][]{
+  colback=okbg, colframe=okborder,
+  boxrule=0.6pt, arc=2pt,
+  left=6pt, right=6pt, top=4pt, bottom=4pt,
+  breakable, title=#1
+}
+
+% --- Encabezado/pie ---
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small NotiUAM --- Bitácora}
+\fancyhead[R]{\small\nouppercase{\leftmark}}
+\fancyfoot[C]{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+% --- Hyperref ---
+\hypersetup{
+  colorlinks=true,
+  linkcolor=accent,
+  urlcolor=accent,
+  citecolor=accent,
+  pdftitle={NotiUAM --- Bitácora de desarrollo},
+  pdfauthor={Aaron Rodrigo Ramos Reyes}
+}
+
+% --- tcolorbox en capítulos ---
+\titlespacing*{\chapter}{0pt}{-20pt}{20pt}

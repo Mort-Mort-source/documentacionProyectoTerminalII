@@ -1,0 +1,142 @@
+\chapter{Sesión 6c: Publicaciones y contadores de no leídos en Flutter}
+\label{ch:sesion6c}
+
+\section{Objetivo de la sesión}
+
+Completar el cliente móvil con:
+
+\begin{itemize}[leftmargin=*]
+  \item Visualización de las publicaciones dentro del canal.
+  \item Publicación de avisos desde la app.
+  \item Consulta y despliegue de contadores de no leídos por canal.
+  \item Marcado automático como leído al abrir un canal.
+  \item Badge numérico en la pestaña ``Suscritos'' con el total de no leídos.
+\end{itemize}
+
+\section{Contexto}
+
+La Sesión~\ref{ch:sesion6b} dejó el listado, búsqueda, detalle y creación de canales funcional. Sin embargo, el detalle del canal solo mostraba un placeholder en lugar de las publicaciones. El backend (Sesiones~\ref{ch:sesion4} y~\ref{ch:sesion5}) ya exponía endpoints de posts y contadores, así que el trabajo era exclusivamente del cliente.
+
+\section{Desarrollo}
+
+\subsection{Archivos nuevos}
+
+\begin{lstlisting}[language=bash]
+mobile/lib/state/
+|- post_provider.dart           (NUEVO)
+`- unread_provider.dart         (NUEVO)
+\end{lstlisting}
+
+\subsection{Archivos modificados}
+
+\begin{itemize}[leftmargin=*]
+  \item \texttt{lib/main.dart}: se registraron \texttt{PostProvider} y \texttt{UnreadProvider} en el \texttt{MultiProvider}.
+  \item \texttt{lib/screens/channel\_detail\_screen.dart}: se reemplazo el placeholder por la lista de publicaciones, la caja para publicar y la logica de marcado como leido.
+  \item \texttt{lib/screens/home\_shell.dart}: se agrego el badge numerico en la pestana ``Suscritos''.
+\end{itemize}
+
+\subsection{Decisiones tecnicas}
+
+\begin{itemize}[leftmargin=*]
+  \item \textbf{Un \texttt{PostProvider} que cachea por canal.} Mantiene un \texttt{Map<String, List<Post>>} indexado por \texttt{channelId}. Esto permite cambiar entre canales sin rehacer peticiones.
+  \item \textbf{Carga optimista al publicar.} Cuando el usuario publica, el post se inserta inmediatamente al inicio de la lista local sin esperar a recargar todo el canal.
+  \item \textbf{Borrado local tras exito del backend.} El \texttt{delete} solo modifica el estado local despues de que el servidor responde 204.
+  \item \textbf{Contadores en Redis como fuente de verdad.} El \texttt{UnreadProvider} solo consulta \texttt{/api/me/unread} y expone el \texttt{Map<String, int>} resultante.
+  \item \textbf{Marcado como leido al entrar.} Al cargar el detalle del canal, se llama automaticamente a \texttt{markRead(channelId)}.
+\end{itemize}
+
+\subsection{Componentes clave}
+
+\subsubsection{\texttt{PostProvider}}
+
+\begin{lstlisting}[language=Java]
+class PostProvider extends ChangeNotifier {
+  final Map<String, List<Post>> _byChannel = {};
+  final Map<String, bool> _loading = {};
+
+  List<Post> postsOf(String channelId);
+  bool isLoading(String channelId);
+
+  Future<void> load(String channelId, {bool refresh = false});
+  Future<Post> create(String channelId, String content);
+  Future<void> delete(String channelId, String postId);
+}
+\end{lstlisting}
+
+\subsubsection{\texttt{UnreadProvider}}
+
+\begin{lstlisting}[language=Java]
+class UnreadProvider extends ChangeNotifier {
+  Map<String, int> _counts = {};
+
+  int get total => _counts.values.fold(0, (a, b) => a + b);
+  int countFor(String channelId) => _counts[channelId] ?? 0;
+
+  Future<void> refresh();
+  Future<void> markRead(String channelId);
+  void clear();
+}
+\end{lstlisting}
+
+\subsubsection{Pantalla de detalle del canal}
+
+Estructura visual:
+
+\begin{itemize}[leftmargin=*]
+  \item Encabezado: nombre, chip de categoria, badge de rol del owner (se anade en la Fase~E), descripcion, autor, contador de suscriptores y boton Suscribirse/Desuscribirse.
+  \item Caja de publicacion: \texttt{TextField} multilinea + boton de envio.
+  \item Lista de publicaciones con \texttt{RefreshIndicator} y paginacion inicial de 50 elementos.
+\end{itemize}
+
+\subsection{Cambios a archivos previos}
+
+\begin{itemize}[leftmargin=*]
+  \item \texttt{main.dart}: \texttt{MultiProvider} ampliado con dos providers.
+  \item \texttt{channel\_detail\_screen.dart}: reemplazo completo.
+  \item \texttt{home\_shell.dart}: badge en la pestana.
+\end{itemize}
+
+\subsection{Problemas encontrados y solucion}
+
+\subsubsection{Locale de fechas no inicializado}
+
+Al abrir el detalle del canal, la app mostraba:
+
+\begin{lstlisting}[language=bash]
+LocaleDataException: Locale data has not been initialized,
+call initializeDateFormatting(<locale>).
+\end{lstlisting}
+
+\textbf{Solucion:} inicializar el locale en \texttt{main()}:
+
+\begin{lstlisting}[language=Java]
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await initializeDateFormatting('es', null);
+  runApp(const NotiuamApp());
+}
+\end{lstlisting}
+
+\section{Verificacion}
+
+Con el backend corriendo en \texttt{localhost:8081} y una sesion iniciada:
+
+\begin{enumerate}[leftmargin=*]
+  \item Entrar a cualquier canal.
+  \item Ver el listado de publicaciones anteriores.
+  \item Publicar un aviso nuevo desde la caja de texto.
+  \item Confirmar que aparece al instante en la lista.
+  \item Abrir el canal desde el usuario destinatario y verificar que el badge de no leidos se limpia.
+\end{enumerate}
+
+\section{Resultado}
+
+\begin{exito}[Estado al cierre]
+\begin{itemize}[leftmargin=*]
+  \item Publicaciones visibles y creables desde la app.
+  \item Contadores de no leidos consumidos desde Redis.
+  \item Badge numerico en la barra inferior.
+  \item Marcado automatico como leido al abrir el canal.
+  \item Base para la moderacion directa (Fase~D5) y para push real (Fase~F).
+\end{itemize}
+\end{exito}

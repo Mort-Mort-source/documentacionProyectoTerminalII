@@ -1,0 +1,319 @@
+\chapter{Backend: reportes, votacion y roles}
+\label{ch:backend_reportes}
+
+\section{Objetivo}
+
+Extender el backend con:
+
+\begin{itemize}[leftmargin=*]
+  \item Sistema de reportes para publicaciones y canales.
+  \item Votacion colegiada de administradores (3 votos para resolver).
+  \item Gestion de roles con jerarquia (STUDENT, PROFESSOR, ADMIN, SUPERADMIN).
+  \item Baneo y desbaneo de usuarios.
+  \item Log de auditoria de acciones administrativas.
+  \item Moderacion directa por dueno del canal.
+\end{itemize}
+
+\section{Contexto}
+
+Hasta la Sesion~\ref{ch:sesion5}, el backend tenia el dominio basico: usuarios, canales, suscripciones, publicaciones y notificaciones. No existia ningun mecanismo de moderacion ni distincion real entre roles mas alla del valor del enum.
+
+Se decidio introducir tres reglas clave:
+
+\begin{enumerate}[leftmargin=*]
+  \item Solo el SUPERADMIN puede promover/degradar libremente (excepto quitar SUPERADMIN).
+  \item Los ADMIN solo pueden promover estudiantes a PROFESSOR o ADMIN.
+  \item Los duenos de un canal pueden moderar sus publicaciones sin votacion.
+\end{enumerate}
+
+\section{Desarrollo}
+
+\subsection{Migracion V2}
+
+Se creo \texttt{V2\_\_reports\_and\_roles.sql} con tres tablas:
+
+\begin{itemize}[leftmargin=*]
+  \item \texttt{reports}: un reporte por (target, reporter).
+  \item \texttt{report\_votes}: un voto por (report, admin).
+  \item \texttt{admin\_action\_log}: bitacora de acciones administrativas.
+\end{itemize}
+
+\begin{lstlisting}[language=SQL]
+CREATE TABLE reports (
+    id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    target_type  VARCHAR(20)  NOT NULL CHECK (target_type IN ('POST', 'CHANNEL')),
+    target_id    UUID         NOT NULL,
+    reporter_id  UUID         NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    reason       VARCHAR(50)  NOT NULL,
+    details      VARCHAR(500),
+    status       VARCHAR(30)  NOT NULL DEFAULT 'PENDING',
+    created_at   TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+    resolved_at  TIMESTAMPTZ,
+    resolved_by  UUID REFERENCES users(id) ON DELETE SET NULL,
+    UNIQUE (target_type, target_id, reporter_id)
+);
+
+CREATE TABLE report_votes (
+    id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    report_id   UUID NOT NULL REFERENCES reports(id) ON DELETE CASCADE,
+    admin_id    UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    decision    VARCHAR(20) NOT NULL CHECK (decision IN ('KEEP', 'DELETE')),
+    comment     VARCHAR(500),
+    voted_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    UNIQUE (report_id, admin_id)
+);
+
+CREATE TABLE admin_action_log (
+    id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    admin_id     UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    action       VARCHAR(50) NOT NULL,
+    target_type  VARCHAR(20),
+    target_id    UUID,
+    details      VARCHAR(500),
+    created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+\end{lstlisting}
+
+\subsection{Enumeraciones}
+
+\begin{lstlisting}[language=Java]
+public enum Role { STUDENT, PROFESSOR, ADMIN, SUPERADMIN }
+public enum ReportTargetType { POST, CHANNEL }
+public enum ReportReason { SPAM, INAPPROPRIATE, MISINFORMATION, HARASSMENT, OTHER }
+public enum ReportStatus { PENDING, RESOLVED_KEEP, RESOLVED_DELETE }
+public enum VoteDecision { KEEP, DELETE }
+\end{lstlisting}
+
+\subsection{Entidades JPA}
+
+Se crearon \texttt{Report}, \texttt{ReportVote} y \texttt{AdminActionLog} siguiendo el mismo patron que las entidades previas: UUID como clave primaria, \texttt{@CreatedDate} para auditoria.
+
+\subsection{Repositorios}
+
+\begin{lstlisting}[language=Java]
+public interface ReportRepository extends JpaRepository<Report, UUID> {
+    Page<Report> findByStatusOrderByCreatedAtDesc(ReportStatus status, Pageable p);
+    Page<Report> findAllByOrderByCreatedAtDesc(Pageable p);
+    List<Report> findByTargetTypeAndTargetIdAndStatus(
+        ReportTargetType type, UUID targetId, ReportStatus status);
+    long countByStatus(ReportStatus status);
+    boolean existsByTargetTypeAndTargetIdAndReporterId(
+        ReportTargetType type, UUID targetId, UUID reporterId);
+}
+
+public interface ReportVoteRepository extends JpaRepository<ReportVote, UUID> {
+    List<ReportVote> findByReportId(UUID reportId);
+    Optional<ReportVote> findByReportIdAndAdminId(UUID reportId, UUID adminId);
+    long countByReportIdAndDecision(UUID reportId, VoteDecision decision);
+    long countByReportId(UUID reportId);
+}
+
+public interface AdminActionLogRepository extends JpaRepository<AdminActionLog, UUID> {
+    Page<AdminActionLog> findAllByOrderByCreatedAtDesc(Pageable p);
+    Page<AdminActionLog> findByAdminIdOrderByCreatedAtDesc(UUID adminId, Pageable p);
+}
+\end{lstlisting}
+
+\subsection{\texttt{ReportService}}
+
+Es el nucleo del sistema de moderacion colegiada. Reglas:
+
+\begin{enumerate}[leftmargin=*]
+  \item Cualquier usuario autenticado puede reportar.
+  \item Un mismo usuario no puede reportar dos veces el mismo contenido.
+  \item Un admin no puede votar en un reporte que el mismo creo.
+  \item Cada admin vota una sola vez por reporte.
+  \item Al alcanzar 3 votos, se resuelve por mayoria simple.
+  \item Si gana DELETE, el contenido se elimina automaticamente.
+\end{enumerate}
+
+\begin{lstlisting}[language=Java]
+public static final int VOTES_REQUIRED = 3;
+
+private void resolveIfComplete(Report report) {
+    long totalVotes = voteRepository.countByReportId(report.getId());
+    if (totalVotes < VOTES_REQUIRED) return;
+
+    long deleteVotes = voteRepository.countByReportIdAndDecision(
+        report.getId(), VoteDecision.DELETE);
+    long keepVotes = voteRepository.countByReportIdAndDecision(
+        report.getId(), VoteDecision.KEEP);
+
+    ReportStatus newStatus;
+    if (deleteVotes > keepVotes) {
+        newStatus = ReportStatus.RESOLVED_DELETE;
+        applyDeletion(report);
+    } else {
+        newStatus = ReportStatus.RESOLVED_KEEP;
+    }
+
+    report.setStatus(newStatus);
+    report.setResolvedAt(Instant.now());
+    reportRepository.save(report);
+}
+\end{lstlisting}
+
+\subsection{\texttt{AdminUserService}}
+
+Encapsula la logica de cambio de rol y ban. Reglas aplicadas en orden:
+
+\begin{enumerate}[leftmargin=*]
+  \item Nadie puede cambiarse su propio rol.
+  \item Nunca se puede quitar el rol SUPERADMIN.
+  \item Solo SUPERADMIN puede nombrar a otro SUPERADMIN.
+  \item ADMIN solo puede promover STUDENT a PROFESSOR o ADMIN.
+  \item Solo SUPERADMIN puede degradar.
+\end{enumerate}
+
+\begin{lstlisting}[language=Java]
+public UserSummaryResponse changeRole(UUID targetUserId, Role newRole) {
+    var me = currentUser.require();
+    UUID myId = me.id();
+    Role myRole = Role.valueOf(me.role());
+
+    if (myId.equals(targetUserId))
+        throw new ForbiddenException("No puedes cambiar tu propio rol");
+
+    User target = userRepository.findById(targetUserId)
+        .orElseThrow(() -> new NotFoundException("Usuario no encontrado"));
+
+    Role currentRole = target.getRole();
+
+    if (currentRole == Role.SUPERADMIN && newRole != Role.SUPERADMIN)
+        throw new ForbiddenException("No se puede degradar a un SUPERADMIN");
+
+    if (newRole == Role.SUPERADMIN && myRole != Role.SUPERADMIN)
+        throw new ForbiddenException("Solo un SUPERADMIN puede nombrar a otro SUPERADMIN");
+
+    if (myRole == Role.ADMIN) {
+        if (currentRole != Role.STUDENT)
+            throw new ForbiddenException("Como ADMIN solo puedes promover estudiantes");
+        if (newRole != Role.PROFESSOR && newRole != Role.ADMIN)
+            throw new ForbiddenException("Como ADMIN solo puedes promover a PROFESSOR o ADMIN");
+    }
+
+    if (myRole != Role.SUPERADMIN && level(newRole) < level(currentRole))
+        throw new ForbiddenException("Solo un SUPERADMIN puede degradar usuarios");
+
+    target.setRole(newRole);
+    userRepository.save(target);
+    // ...
+    return toResponse(target);
+}
+\end{lstlisting}
+
+\subsection{Moderacion directa por dueno del canal}
+
+En \texttt{PostService.delete()} se anadio la regla que permite al dueno del canal (incluyendo profesores) borrar publicaciones ajenas sin necesidad de votacion.
+
+\begin{lstlisting}[language=Java]
+@Transactional
+public void delete(UUID postId) {
+    Post p = postRepository.findById(postId)
+        .orElseThrow(() -> new NotFoundException("Publicacion no encontrada"));
+
+    var me = currentUser.require();
+    UUID myId = me.id();
+    Role myRole = Role.valueOf(me.role());
+
+    UUID authorId = p.getAuthor().getId();
+    UUID channelOwnerId = p.getChannel().getOwner().getId();
+
+    boolean isAuthor = authorId.equals(myId);
+    boolean isChannelOwner = channelOwnerId.equals(myId);
+    boolean isAdmin = myRole == Role.ADMIN || myRole == Role.SUPERADMIN;
+
+    if (!isAuthor && !isChannelOwner && !isAdmin) {
+        throw new ForbiddenException(
+            "Solo el autor, el dueno del canal o un moderador pueden eliminar");
+    }
+
+    if (!isAuthor) {
+        User admin = userRepository.findById(myId).orElseThrow();
+        String reason = isChannelOwner
+            ? "Moderacion del dueno del canal"
+            : "Moderacion administrativa";
+        adminLog.log(admin, "DELETE_POST", ReportTargetType.POST,
+            postId, reason + ": " + p.getChannel().getName());
+    }
+
+    postRepository.delete(p);
+}
+\end{lstlisting}
+
+\subsection{Endpoints}
+
+\begin{lstlisting}[language=bash]
+POST   /api/reports                          (cualquier usuario)
+GET    /api/admin/reports?status=...         (ADMIN, SUPERADMIN)
+GET    /api/admin/reports/{id}               (ADMIN, SUPERADMIN)
+POST   /api/admin/reports/{id}/vote          (ADMIN, SUPERADMIN)
+GET    /api/admin/users?q=...                (ADMIN, SUPERADMIN)
+GET    /api/admin/users/{id}                 (ADMIN, SUPERADMIN)
+PATCH  /api/admin/users/{id}/role            (ADMIN, SUPERADMIN con reglas)
+PATCH  /api/admin/users/{id}/status          (solo SUPERADMIN)
+GET    /api/admin/audit                      (ADMIN propio / SUPERADMIN todo)
+DELETE /api/posts/{id}                       (autor, dueno, moderador)
+\end{lstlisting}
+
+\subsection{Habilitacion de \texttt{@PreAuthorize}}
+
+Se agrego \texttt{@EnableMethodSecurity} a \texttt{SecurityConfig} para que las anotaciones de metodo sean respetadas.
+
+\subsection{Problemas encontrados y solucion}
+
+\subsubsection{\texttt{LazyInitializationException} en el endpoint de auditoria}
+
+El endpoint \texttt{/api/admin/audit} devolvia 403 en lugar de 200. El log revelo una excepcion oculta:
+
+\begin{lstlisting}[language=bash]
+org.hibernate.LazyInitializationException: Could not initialize proxy
+[mx.uam.notiuam.domain.User#...] - no session
+    at ...AdminAuditController.lambda$list$0(AdminAuditController.java:41)
+\end{lstlisting}
+
+El mapeo de entidades a DTO se hacia en el controller, fuera de la transaccion, y al acceder a \texttt{log.getAdmin().getDisplayName()} la sesion JPA ya estaba cerrada.
+
+\textbf{Solucion:} mover el mapeo al servicio (\texttt{AdminLogService}), dentro del \texttt{@Transactional(readOnly = true)}.
+
+\section{Verificacion}
+
+\subsection{Reglas de rol}
+
+\begin{itemize}[leftmargin=*]
+  \item SUPERADMIN promueve y degrada sin restricciones (salvo quitar SUPERADMIN).
+  \item ADMIN solo promueve estudiantes.
+  \item ADMIN no puede banear.
+  \item Un usuario baneado no puede iniciar sesion.
+\end{itemize}
+
+\subsection{Flujo de reporte y votacion}
+
+\begin{enumerate}[leftmargin=*]
+  \item Betzabet reporta un post de Aaron.
+  \item Guillermo vota DELETE.
+  \item Aaron vota DELETE.
+  \item Un cuarto admin vota KEEP.
+  \item Con 3 votos (2--1) el sistema resuelve con \texttt{RESOLVED\_DELETE}.
+  \item El post se elimina automaticamente.
+\end{enumerate}
+
+\subsection{Moderacion directa}
+
+\begin{itemize}[leftmargin=*]
+  \item El dueno del canal puede borrar publicaciones ajenas.
+  \item El borrado se registra como \texttt{Moderacion del dueno del canal}.
+  \item Un ADMIN puede borrar en cualquier canal.
+  \item Un STUDENT solo puede borrar sus propios posts.
+\end{itemize}
+
+\section{Resultado}
+
+\begin{exito}[Estado al cierre]
+\begin{itemize}[leftmargin=*]
+  \item Sistema de moderacion completo con votacion colegiada.
+  \item Jerarquia de roles con reglas bien definidas.
+  \item Auditoria de todas las acciones administrativas.
+  \item Base solida para la interfaz de administracion en el cliente Flutter.
+\end{itemize}
+\end{exito}

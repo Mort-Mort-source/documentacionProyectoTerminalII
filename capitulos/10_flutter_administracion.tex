@@ -1,0 +1,198 @@
+\chapter{Flutter: reportar, moderar y administrar}
+\label{ch:flutter_admin}
+
+\section{Objetivo}
+
+Implementar en el cliente Flutter toda la interfaz administrativa y de moderacion:
+
+\begin{itemize}[leftmargin=*]
+  \item Boton de reportar en publicaciones y canales.
+  \item Menu contextual en cada publicacion con Reportar y Eliminar.
+  \item Pantalla de administracion con tres pestanas: Reportes, Usuarios y Auditoria.
+  \item Detalle del reporte con votacion.
+  \item Gestion de roles y baneo de usuarios.
+  \item Consulta del log de auditoria.
+\end{itemize}
+
+\section{Contexto}
+
+El backend de la Fase~\ref{ch:backend_reportes} ya exponia todos los endpoints. El cliente no tenia ninguna interfaz que los consumiera. Se dividio el trabajo en cinco sub-fases: D2 (boton de reportar), D3 (lista de reportes), D4 (panel completo), D5 (moderacion directa).
+
+\section{Desarrollo}
+
+\subsection{Modelos nuevos}
+
+\begin{itemize}[leftmargin=*]
+  \item \texttt{Report}: mapea la respuesta de \texttt{/api/admin/reports}.
+  \item \texttt{AdminUser}: mapea \texttt{/api/admin/users}.
+  \item \texttt{AuditLog}: mapea \texttt{/api/admin/audit}.
+\end{itemize}
+
+\subsection{Providers nuevos}
+
+\begin{itemize}[leftmargin=*]
+  \item \texttt{ReportProvider}: crear reportes desde cualquier usuario.
+  \item \texttt{AdminProvider}: carga de reportes, usuarios y auditoria, ademas de votar, cambiar rol y banear.
+  \item \texttt{PostProvider.delete()}: borra publicaciones y actualiza el estado local.
+\end{itemize}
+
+\subsection{Wigets reutilizables}
+
+\subsubsection{\texttt{ReportDialog}}
+
+Modal reutilizable con:
+
+\begin{itemize}[leftmargin=*]
+  \item Radio buttons con las cinco razones (\texttt{SPAM}, \texttt{INAPPROPRIATE}, \texttt{MISINFORMATION}, \texttt{HARASSMENT}, \texttt{OTHER}).
+  \item Campo de detalles opcional.
+  \item Validacion y feedback con SnackBar.
+\end{itemize}
+
+Se expone como metodo estatico:
+
+\begin{lstlisting}[language=Java]
+static Future<void> show(BuildContext context, {
+  required String targetType,   // 'POST' | 'CHANNEL'
+  required String targetId,
+  required String targetLabel,
+});
+\end{lstlisting}
+
+\subsection{Menu contextual en publicaciones}
+
+Se reemplazo el icono de reportar por un \texttt{PopupMenuButton} que muestra las opciones segun los permisos del usuario actual.
+
+\begin{lstlisting}[language=Java]
+final isOwn = currentUserId != null && post.authorId == currentUserId;
+final canDelete = isOwn || canModerateAny;
+final canReport = !isOwn;
+
+PopupMenuButton<String>(
+  onSelected: (value) {
+    if (value == 'report') ReportDialog.show(...);
+    else if (value == 'delete') onDelete();
+  },
+  itemBuilder: (_) => [
+    if (canReport) PopupMenuItem(value: 'report', child: ...),
+    if (canDelete) PopupMenuItem(value: 'delete', child: ...),
+  ],
+);
+\end{lstlisting}
+
+\subsection{Pantalla \texttt{AdminScreen}}
+
+Contiene un \texttt{TabBar} con tres sub-pestanas:
+
+\begin{itemize}[leftmargin=*]
+  \item \texttt{AdminReportsTab}: lista con filtros por estado.
+  \item \texttt{AdminUsersTab}: listado con buscador y acciones.
+  \item \texttt{AdminAuditTab}: bitacora con iconos por tipo de accion.
+\end{itemize}
+
+Solo es visible para ADMIN y SUPERADMIN (verificado con \texttt{auth.isAdminOrSuper}).
+
+\subsection{\texttt{AdminReportsTab}}
+
+Filtros por estado:
+
+\begin{lstlisting}[language=Java]
+static const _filters = [
+  ('PENDING', 'Pendientes'),
+  ('RESOLVED_KEEP', 'Conservados'),
+  ('RESOLVED_DELETE', 'Eliminados'),
+  ('ALL', 'Todos'),
+];
+\end{lstlisting}
+
+Cada tarjeta muestra:
+
+\begin{itemize}[leftmargin=*]
+  \item Chip de tipo (Post/Canal).
+  \item Chip de razon.
+  \item Chip de estado con color.
+  \item Preview del contenido reportado.
+  \item Contador de votos \texttt{0/3}, \texttt{1/3}, etc.
+  \item Indicador de voto propio si el usuario ya voto.
+\end{itemize}
+
+\subsection{\texttt{ReportDetailScreen}}
+
+Pantalla de detalle con:
+
+\begin{itemize}[leftmargin=*]
+  \item Contenido reportado y su ubicacion.
+  \item Motivo y detalles del reporte.
+  \item Informacion del reporter.
+  \item Contador de votos con barra de progreso.
+  \item Botones de voto (Conservar / Eliminar).
+  \item Estado de resuelto si aplica.
+\end{itemize}
+
+Antes de votar, se pide un comentario opcional en un dialogo.
+
+\subsection{\texttt{AdminUsersTab}}
+
+Lista con:
+
+\begin{itemize}[leftmargin=*]
+  \item Avatar con inicial.
+  \item Nombre, email y badge de rol con color.
+  \item Badge ``Tu'' en el usuario actual.
+  \item Badge ``BANEADO'' si esta deshabilitado.
+  \item Boton de tres puntos que abre un bottom sheet con las acciones.
+\end{itemize}
+
+\subsection{Bottom sheet de acciones}
+
+Para ADMIN muestra solo promociones (Estudiante, Profesor, Administrador).
+Para SUPERADMIN agrega:
+
+\begin{itemize}[leftmargin=*]
+  \item Opcion de nombrar SUPERADMIN.
+  \item Boton de Banear o Reactivar.
+\end{itemize}
+
+Cada accion pide confirmacion en un dialogo antes de ejecutarse.
+
+\subsection{\texttt{AdminAuditTab}}
+
+Muestra el log con:
+
+\begin{itemize}[leftmargin=*]
+  \item Icono y color segun la accion (\texttt{VOTE\_KEEP}, \texttt{VOTE\_DELETE}, \texttt{CHANGE\_ROLE}, \texttt{BAN\_USER}, \texttt{UNBAN\_USER}, \texttt{DELETE\_POST}).
+  \item Nombre del admin.
+  \item Detalles.
+  \item Fecha y hora.
+\end{itemize}
+
+Un banner superior indica si esta viendo todo el log (SUPERADMIN) o solo el propio (ADMIN).
+
+\subsection{Cambios a archivos previos}
+
+\begin{itemize}[leftmargin=*]
+  \item \texttt{home\_shell.dart}: se agrego la pestana Admin condicional segun el rol.
+  \item \texttt{channel\_detail\_screen.dart}: se agrego el menu contextual por publicacion.
+  \item \texttt{post\_provider.dart}: se agrego el metodo \texttt{delete}.
+  \item \texttt{main.dart}: se registraron \texttt{ReportProvider} y \texttt{AdminProvider}.
+\end{itemize}
+
+\section{Verificacion}
+
+\begin{itemize}[leftmargin=*]
+  \item Un estudiante puede reportar publicaciones y canales.
+  \item Un administrador ve la pestana Admin.
+  \item El SUPERADMIN ve tres sub-pestanas y puede votar, gestionar usuarios y consultar el log completo.
+  \item Un ADMIN solo ve sus propias acciones en el log.
+  \item El dueno del canal puede borrar publicaciones ajenas sin votacion.
+\end{itemize}
+
+\section{Resultado}
+
+\begin{exito}[Estado al cierre]
+\begin{itemize}[leftmargin=*]
+  \item Interfaz completa de reportes y moderacion.
+  \item Gestion de usuarios con jerarquia de roles.
+  \item Auditoria visible segun el rol.
+  \item Moderacion directa por dueno del canal.
+\end{itemize}
+\end{exito}

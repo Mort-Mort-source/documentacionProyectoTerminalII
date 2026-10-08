@@ -1,0 +1,184 @@
+\chapter{Sesión 6b: Listado, búsqueda y creación de canales}
+\label{ch:sesion6b}
+
+\section{Objetivo de la sesión}
+
+Sustituir las cuatro pestañas placeholder del \texttt{HomeShell} por pantallas funcionales:
+
+\begin{itemize}[leftmargin=*]
+  \item \textbf{Explorar:} lista de canales públicos con búsqueda y pull-to-refresh.
+  \item \textbf{Detalle del canal:} información completa + botón de suscripción.
+  \item \textbf{Crear canal:} formulario con validación, selector de categoría y feedback de errores.
+  \item \textbf{Mis canales} y \textbf{Suscritos:} listados filtrados por el usuario autenticado.
+  \item \textbf{Perfil:} nombre del usuario autenticado.
+\end{itemize}
+
+\section{Contexto}
+
+La Sesión~\ref{ch:sesion6a} dejó el login funcional, pero al entrar al \texttt{HomeShell} solo se veían cuatro textos de ``en construcción''. El objetivo ahora es conectar la interfaz con los endpoints \texttt{/api/channels/**} que ya funcionaban desde la Sesión~\ref{ch:sesion4}.
+
+\section{Desarrollo}
+
+\subsection{Archivos nuevos}
+
+\begin{lstlisting}[language=bash]
+mobile/lib/
+|- state/
+|  `- channel_provider.dart          (NUEVO)
+`- screens/
+   |- explore_screen.dart            (NUEVO)
+   |- channel_detail_screen.dart     (NUEVO)
+   `- create_channel_screen.dart     (NUEVO)
+\end{lstlisting}
+
+\subsection{Archivos modificados}
+
+\begin{itemize}[leftmargin=*]
+  \item \texttt{lib/screens/home\_shell.dart}: se reemplazaron los \texttt{\_Placeholder} por pantallas reales.
+  \item \texttt{lib/main.dart}: se añadió el \texttt{ChannelProvider} al árbol de \texttt{MultiProvider}.
+\end{itemize}
+
+\subsection{Decisiones técnicas}
+
+\begin{itemize}[leftmargin=*]
+  \item \textbf{Un solo \texttt{ChannelProvider} para todo el dominio de canales.} Mantiene tres listas (\texttt{publicChannels}, \texttt{mine}, \texttt{subscribed}) y expone métodos de carga por separado. Evita crear un provider por pestaña.
+  \item \textbf{Recarga tras cada mutación.} Al crear un canal o cambiar una suscripción, el provider recarga automáticamente las listas afectadas. Esto mantiene la UI sincronizada sin estado duplicado.
+  \item \textbf{Iconos por categoría.} La pestaña Explorar muestra un icono y color distinto según la categoría del canal, lo que mejora el reconocimiento visual.
+  \item \textbf{Validación en formularios con \texttt{GlobalKey<FormState>}.} Los campos del formulario de creación se validan antes de enviar la petición.
+  \item \textbf{Feedback de error con \texttt{SnackBar}.} Los errores de suscripción se muestran como snack bar en lugar de bloquear la pantalla; los errores del formulario se muestran inline.
+\end{itemize}
+
+\subsection{Componentes clave}
+
+\subsubsection{\texttt{ChannelProvider}}
+
+Métodos públicos:
+
+\begin{lstlisting}[language=Java]
+Future<void> loadPublic({String? query});
+Future<void> loadMine();
+Future<void> loadSubscribed();
+Future<Channel> getById(String id);
+Future<Channel> create({required String name, String? description, required String category});
+Future<void> toggleSubscription(Channel channel);
+\end{lstlisting}
+
+Estado expuesto:
+
+\begin{lstlisting}[language=Java]
+List<Channel> get publicChannels;
+List<Channel> get mine;
+List<Channel> get subscribed;
+bool get loading;
+String? get error;
+\end{lstlisting}
+
+\subsubsection{\texttt{ExploreScreen}}
+
+Estructura visual:
+
+\begin{itemize}[leftmargin=*]
+  \item Barra de búsqueda fija en la parte superior con botón de limpiar.
+  \item \texttt{LinearProgressIndicator} visible solo mientras \texttt{loading}.
+  \item \texttt{RefreshIndicator} para pull-to-refresh.
+  \item Lista de \texttt{Card} con \texttt{ListTile} por cada canal (icono, nombre, descripción, contador de suscriptores, indicador de suscripción).
+  \item \texttt{FloatingActionButton.extended} con acción ``Crear canal''.
+\end{itemize}
+
+La búsqueda dispara \texttt{loadPublic(query: <texto>)} que el backend traduce a un \texttt{LIKE \%texto\%}.
+
+\subsubsection{\texttt{ChannelDetailScreen}}
+
+Recibe un \texttt{channelId} por parámetro. En \texttt{initState} carga el canal con \texttt{getById}. La pantalla muestra:
+
+\begin{itemize}[leftmargin=*]
+  \item Nombre y \texttt{Chip} con la categoría.
+  \item Descripción.
+  \item Autor y número de suscriptores.
+  \item Botón principal cuyo texto y acción cambian según \texttt{subscribedByMe}:
+    \begin{itemize}
+      \item \texttt{Suscribirse} → \texttt{POST /api/channels/\{id\}/subscribe}.
+      \item \texttt{Desuscribirse} → \texttt{DELETE /api/channels/\{id\}/subscribe}.
+    \end{itemize}
+  \item Marcador para la sección de publicaciones (se completa en la Sesión~\ref{ch:sesion6c}).
+\end{itemize}
+
+\subsubsection{\texttt{CreateChannelScreen}}
+
+Formulario con:
+
+\begin{itemize}[leftmargin=*]
+  \item Campo de nombre (mínimo 3 caracteres).
+  \item Campo de descripción (opcional, multilínea).
+  \item \texttt{DropdownButtonFormField<String>} con las seis categorías del dominio.
+  \item Botón de envío con estado de carga.
+\end{itemize}
+
+Al enviar, llama a \texttt{ChannelProvider.create(...)} y hace \texttt{pop()} para volver a la pantalla anterior. El nuevo canal aparece automáticamente porque \texttt{create()} llama internamente a \texttt{loadMine()}.
+
+\subsubsection{\texttt{HomeShell} actualizado}
+
+Se reemplazaron los placeholders. La estructura de pestañas ahora es:
+
+\begin{lstlisting}[language=Java]
+final pages = [
+  const ExploreScreen(),
+  const _MineScreen(),
+  const _SubscribedScreen(),
+  _ProfileScreen(displayName: auth.user?.displayName ?? 'Usuario'),
+];
+\end{lstlisting}
+
+\texttt{\_MineScreen} y \texttt{\_SubscribedScreen} son \texttt{StatefulWidget} que cargan sus listas en \texttt{initState} mediante \texttt{WidgetsBinding.instance.addPostFrameCallback}.
+
+\subsection{Cambios a archivos previos}
+
+\begin{itemize}[leftmargin=*]
+  \item \texttt{home\_shell.dart}: se eliminó la clase \texttt{\_Placeholder} y se añadieron \texttt{\_MineScreen}, \texttt{\_SubscribedScreen} y \texttt{\_ProfileScreen}.
+  \item \texttt{main.dart}: se añadió el import \texttt{state/channel\_provider.dart} y un \texttt{ChangeNotifierProxyProvider<ApiClient, ChannelProvider>} al \texttt{MultiProvider}.
+\end{itemize}
+
+\section{Verificación}
+
+\subsection{Compilación}
+
+\begin{lstlisting}[language=bash]
+cd ~/Escritorio/notiuam/mobile
+flutter run -d linux
+\end{lstlisting}
+
+Debe compilar sin errores y abrir la ventana de la app.
+
+\subsection{Flujo verificado}
+
+Con el backend corriendo en \texttt{localhost:8081}:
+
+\begin{enumerate}[leftmargin=*]
+  \item Login con \texttt{aaron@uam.mx} / \texttt{password123}.
+  \item \textbf{Pestaña Explorar} carga la lista de canales públicos (incluyendo los creados por curl en sesiones anteriores).
+  \item \textbf{Búsqueda:} escribir un texto y pulsar Enter filtra los canales por nombre.
+  \item \textbf{Tocar un canal} abre el detalle con descripción, autor y contador de suscriptores.
+  \item \textbf{Pulsar Suscribirse} cambia el botón a ``Desuscribirse'' y suma 1 al contador.
+  \item \textbf{FAB ``Crear canal''} abre el formulario. Al enviarlo:
+    \begin{itemize}
+      \item Vuelve a la pantalla anterior.
+      \item El nuevo canal aparece en la lista de Explorar.
+      \item El nuevo canal aparece en ``Mis canales''.
+    \end{itemize}
+  \item \textbf{Pestaña Suscritos} muestra los canales a los que el usuario se ha suscrito.
+  \item \textbf{Pestaña Perfil} muestra el nombre del usuario autenticado.
+\end{enumerate}
+
+\section{Resultado}
+
+\begin{exito}[Estado al cierre]
+\begin{itemize}[leftmargin=*]
+  \item Navegación entre pantallas funcional.
+  \item Listado de canales públicos, filtrado por búsqueda.
+  \item Creación de canales desde la app.
+  \item Suscripción y desuscripción desde el detalle.
+  \item Sincronización automática de listas tras cada mutación.
+\end{itemize}
+\end{exito}
+
+\textbf{Pendiente para la siguiente sub-sesión:} añadir la sección de publicaciones dentro del detalle del canal, el botón para publicar desde la app, y mostrar los contadores de no leídos por canal.

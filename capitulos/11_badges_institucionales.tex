@@ -1,0 +1,111 @@
+\chapter{Distintivo visual de canales institucionales}
+\label{ch:badges}
+
+\section{Objetivo}
+
+Marcar visualmente los canales segun el rol de su creador para que los usuarios distingan rapidamente entre:
+
+\begin{itemize}[leftmargin=*]
+  \item Canales creados por profesores (contenido academico).
+  \item Canales creados por administradores (contenido oficial).
+  \item Canales creados por estudiantes (sin distintivo).
+\end{itemize}
+
+\section{Contexto}
+
+Una vez integrado el sistema de roles, era natural que la interfaz reflejara esa jerarquia en los canales. Un canal creado por un profesor tiene un peso academico distinto al de un canal creado por un estudiante, y un canal oficial debe ser reconocible a primera vista.
+
+\section{Desarrollo}
+
+\subsection{Cambio en el backend}
+
+Se agrego el campo \texttt{ownerRole} a los dos DTOs de canal:
+
+\begin{lstlisting}[language=Java]
+public record ChannelSummaryResponse(
+        UUID id,
+        String name,
+        String category,
+        boolean publicChannel,
+        String ownerDisplayName,
+        String ownerRole,           // NUEVO
+        long subscriberCount,
+        Instant createdAt
+) {}
+\end{lstlisting}
+
+Y el mismo campo en \texttt{ChannelResponse}. En \texttt{ChannelService} se actualizaron los dos metodos privados que construyen la respuesta.
+
+\subsection{Modelo en Flutter}
+
+\begin{lstlisting}[language=Java]
+class Channel {
+  final String ownerRole;
+  // ...
+
+  bool get isOfficial => ownerRole == 'ADMIN' || ownerRole == 'SUPERADMIN';
+  bool get isProfessorOwned => ownerRole == 'PROFESSOR';
+}
+\end{lstlisting}
+
+\subsection{Wiget \texttt{ChannelOwnerBadge}}
+
+\begin{lstlisting}[language=Java]
+class ChannelOwnerBadge extends StatelessWidget {
+  final String ownerRole;
+  final bool compact;
+
+  @override
+  Widget build(BuildContext context) {
+    if (ownerRole == 'STUDENT') return const SizedBox.shrink();
+
+    if (ownerRole == 'PROFESSOR') {
+      return _badge(
+        icon: Icons.school_outlined,
+        label: 'Profesor',
+        color: NotiuamColors.info,
+      );
+    }
+
+    if (ownerRole == 'ADMIN' || ownerRole == 'SUPERADMIN') {
+      return _badge(
+        icon: Icons.verified_outlined,
+        label: 'Oficial',
+        color: NotiuamColors.orangeDark,
+      );
+    }
+
+    return const SizedBox.shrink();
+  }
+}
+\end{lstlisting}
+
+\subsection{Ubicaciones del badge}
+
+El badge se muestra en:
+
+\begin{itemize}[leftmargin=*]
+  \item \texttt{ExploreScreen}: junto al nombre de cada canal en la lista.
+  \item \texttt{ChannelDetailScreen}: debajo del nombre del canal.
+  \item \texttt{\_ChannelList} en \texttt{home\_shell}: junto al nombre en ``Mis canales'' y ``Suscritos''.
+\end{itemize}
+
+En todas se usa una version compacta cuando el espacio es reducido.
+
+\section{Verificacion}
+
+\begin{itemize}[leftmargin=*]
+  \item Canales creados por PROFESSOR muestran badge azul con etiqueta ``Profesor''.
+  \item Canales creados por ADMIN o SUPERADMIN muestran badge naranja con etiqueta ``Oficial''.
+  \item Canales creados por estudiantes no muestran badge.
+\end{itemize}
+
+\section{Resultado}
+
+\begin{exito}[Estado al cierre]
+\begin{itemize}[leftmargin=*]
+  \item Distincion visual clara segun el rol del creador.
+  \item Coherencia con la jerarquia de roles definida en el backend.
+  \item Refuerzo de la confianza en canales oficiales y academicos.
+\end{itemize}
+\end{exito}

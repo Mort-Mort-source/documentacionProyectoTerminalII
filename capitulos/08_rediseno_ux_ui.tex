@@ -1,0 +1,145 @@
+\chapter{Rediseno UX/UI con paleta UAM-C}
+\label{ch:rediseno}
+
+\section{Objetivo}
+
+Mejorar el acabado visual de la primera version del cliente:
+
+\begin{itemize}[leftmargin=*]
+  \item Definir una paleta inspirada en el naranja institucional de la UAM Cuajimalpa.
+  \item Centralizar los estilos en un unico \texttt{ThemeData}.
+  \item Eliminar el problema de iconos de Material que se renderizaban como glifos de fuentes CJK.
+  \item Redisenar las pantallas de login y registro con el nuevo estilo.
+\end{itemize}
+
+\section{Contexto}
+
+Al llegar a la Sesion~\ref{ch:sesion6b}, la app funcionaba pero se veia generica. Ademas, los iconos de Material Design aparecian como caracteres raros en la barra de navegacion inferior, en el campo de busqueda y en el boton de logout.
+
+\section{Desarrollo}
+
+\subsection{Diagnostico del problema de iconos}
+
+Los glifos ``raros'' no eran caracteres chinos insertados en el codigo. Eran iconos de Material Design que no podian cargarse porque faltaba la directiva \texttt{uses-material-design: true} en el \texttt{pubspec.yaml}. Al no encontrarlos, Flutter caia en fuentes de respaldo del sistema (CJK), lo que producia los glifos incorrectos.
+
+\subsection{Correccion del \texttt{pubspec.yaml}}
+
+\begin{lstlisting}[language=bash]
+name: notiuam_mobile
+description: "Plataforma distribuida de comunicacion y alertas comunitarias."
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.13.4
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+  dio: ^5.7.0
+  flutter_secure_storage: ^9.2.2
+  provider: ^6.1.2
+  intl: ^0.19.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+
+flutter:
+  uses-material-design: true
+\end{lstlisting}
+
+\subsection{Paleta institucional}
+
+Se definio una paleta que parte del naranja institucional:
+
+\begin{table}[htbp]
+\centering
+\begin{tabular}{l l l}
+\toprule
+Rol & Hex & Uso \\
+\midrule
+\texttt{orange} & \#E85D04 & Botones, AppBar \\
+\texttt{orangeDark} & \#B84700 & Estado pressed \\
+\texttt{orangeLight} & \#F48C06 & Chips, badges \\
+\texttt{charcoal} & \#2B2B2B & Texto principal \\
+\texttt{cream} & \#FAFAF7 & Fondo \\
+\texttt{success} & \#2A9D8F & Acciones positivas \\
+\texttt{danger} & \#D62828 & Reportes, eliminar \\
+\texttt{info} & \#457B9D & Informacion \\
+\bottomrule
+\end{tabular}
+\caption{Paleta UAM-C utilizada en el cliente Flutter}
+\end{table}
+
+\subsection{Centralizacion del tema}
+
+Se creo \texttt{lib/core/theme.dart} con dos clases: \texttt{NotiuamColors} (constantes) y \texttt{NotiuamTheme} (constructor del \texttt{ThemeData}).
+
+\begin{lstlisting}[language=Java]
+class NotiuamTheme {
+  static ThemeData light() {
+    final base = ThemeData(
+      useMaterial3: true,
+      colorScheme: ColorScheme.fromSeed(
+        seedColor: NotiuamColors.orange,
+        primary: NotiuamColors.orange,
+        brightness: Brightness.light,
+      ),
+    );
+
+    return base.copyWith(
+      scaffoldBackgroundColor: NotiuamColors.cream,
+      appBarTheme: const AppBarTheme(
+        backgroundColor: NotiuamColors.orange,
+        foregroundColor: Colors.white,
+      ),
+      filledButtonTheme: ...,
+      outlinedButtonTheme: ...,
+      inputDecorationTheme: ...,
+      chipTheme: ...,
+      navigationBarTheme: ...,
+    );
+  }
+}
+\end{lstlisting}
+
+\subsection{Rediseno de pantallas}
+
+\subsubsection{Login}
+
+Se agrego un bloque de logo cuadrado con la letra N, subtitulo descriptivo, inputs con iconos, caja de error con fondo rosado y boton de altura fija con estado de carga.
+
+\subsubsection{Registro}
+
+Se anadio un encabezado con titulo y subtitulo, campos con iconos y limitacion de ancho a 420 px con \texttt{ConstrainedBox}.
+
+\subsection{Cambios a archivos previos}
+
+\begin{itemize}[leftmargin=*]
+  \item \texttt{pubspec.yaml}: se reescribio agregando \texttt{uses-material-design: true}.
+  \item \texttt{main.dart}: se cambio \texttt{theme: ThemeData(...)} por \texttt{theme: NotiuamTheme.light()}.
+  \item \texttt{login\_screen.dart} y \texttt{register\_screen.dart}: rediseno completo.
+  \item \texttt{explore\_screen.dart}: se ajustaron los colores del metodo \texttt{\_categoryIcon}.
+\end{itemize}
+
+\section{Verificacion}
+
+\begin{itemize}[leftmargin=*]
+  \item Los iconos de la barra inferior se ven como brujula, carpeta, marcador y persona.
+  \item El AppBar y los botones principales usan el naranja institucional.
+  \item Las tarjetas usan fondo blanco sobre crema.
+  \item Los campos de texto tienen borde de foco naranja.
+\end{itemize}
+
+\section{Resultado}
+
+\begin{exito}[Estado al cierre]
+\begin{itemize}[leftmargin=*]
+  \item Tema visual coherente en toda la app.
+  \item Iconos de Material correctos.
+  \item Base para las pantallas de administracion y moderacion.
+\end{itemize}
+\end{exito}

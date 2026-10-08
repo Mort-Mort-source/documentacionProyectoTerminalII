@@ -1,0 +1,45 @@
+\chapter{Introducción}
+
+Este documento es la \textbf{bitácora técnica} del desarrollo de \textbf{NotiUAM}, la plataforma distribuida de comunicación y alertas comunitarias para entornos universitarios descrita en el protocolo de Proyecto Terminal I.
+
+\section{Objetivo}
+
+Registrar de forma cronológica y reproducible cada una de las sesiones de desarrollo: qué se hizo, por qué se hizo así, qué archivos se crearon, qué comandos se ejecutaron y cómo se verificó que todo funcionara.
+
+\section{Organización}
+
+Cada capítulo corresponde a una \textbf{sesión de trabajo} y sigue la misma estructura:
+
+\begin{enumerate}[leftmargin=*]
+  \item \textbf{Objetivo de la sesión.} Qué se busca lograr.
+  \item \textbf{Contexto.} Qué teníamos antes y qué necesitamos ahora.
+  \item \textbf{Desarrollo.} Archivos, comandos y decisiones técnicas.
+  \item \textbf{Verificación.} Cómo comprobar que funcionó.
+  \item \textbf{Resultado.} Estado al cierre de la sesión y pendientes.
+\end{enumerate}
+
+\section{Sesiones documentadas}
+
+\begin{itemize}[leftmargin=*]
+  \item \textbf{Sesión 1:} Infraestructura base con Docker.
+  \item \textbf{Sesión 2:} Backend Spring Boot base con entidades JPA, repositorios y Flyway.
+  \item \textbf{Sesión 3:} Seguridad JWT con registro, login y refresh.
+  \item \textbf{Sesión 4:} Endpoints de canales, suscripciones y publicaciones.
+  \item \textbf{Sesión 5:} Productor y consumidor Kafka, contadores en Redis.
+  \item \textbf{Sesión 6a:} Cliente Flutter: setup, HTTP con JWT, login y registro.
+  \item \textbf{Sesión 6b:} Listado, búsqueda, detalle y creación de canales en Flutter.
+  \item \textbf{Sesión 6c:} Publicaciones y contadores de no leídos en Flutter.
+  \item \textbf{Rediseño UX/UI:} Paleta UAM-C y corrección de iconos de Material.
+  \item \textbf{Backend de reportes y roles:} Votación colegiada, gestión de roles y auditoría.
+  \item \textbf{Interfaz de administración:} Reportar, moderar, votar, gestionar usuarios y consultar auditoría.
+  \item \textbf{Distintivo de canales institucionales:} Badges visuales según rol del creador.
+\end{itemize}
+
+\section{Convenciones}
+
+\begin{itemize}[leftmargin=*]
+  \item Los bloques con fondo gris son \textbf{código o comandos} listos para copiar.
+  \item Las cajas azules con \textbf{Nota} contienen aclaraciones técnicas.
+  \item Las cajas amarillas con \textbf{Aviso} marcan advertencias o cosas a tener cuidado.
+  \item Las cajas verdes con \textbf{Verificación} indican cómo comprobar que algo funciona.
+\end{itemize}
