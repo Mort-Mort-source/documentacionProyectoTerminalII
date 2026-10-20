@@ -1,221 +1,288 @@
 \babel@toc {spanish}{}\relax 
-\contentsline {chapter}{\numberline {1}Introducción}{6}{chapter.1}%
-\contentsline {section}{\numberline {1.1}Objetivo}{6}{section.1.1}%
-\contentsline {section}{\numberline {1.2}Organización}{6}{section.1.2}%
-\contentsline {section}{\numberline {1.3}Sesiones documentadas}{6}{section.1.3}%
-\contentsline {section}{\numberline {1.4}Convenciones}{7}{section.1.4}%
-\contentsline {chapter}{\numberline {2}Sesión 1: Infraestructura base con Docker}{8}{chapter.2}%
-\contentsline {section}{\numberline {2.1}Objetivo de la sesión}{8}{section.2.1}%
-\contentsline {section}{\numberline {2.2}Contexto}{8}{section.2.2}%
-\contentsline {section}{\numberline {2.3}Desarrollo}{8}{section.2.3}%
-\contentsline {subsection}{\numberline {2.3.1}Estructura del repositorio}{8}{subsection.2.3.1}%
-\contentsline {subsection}{\numberline {2.3.2}Variables de entorno (\texttt {.env})}{9}{subsection.2.3.2}%
-\contentsline {subsection}{\numberline {2.3.3}\texttt {docker-compose.yml}}{9}{subsection.2.3.3}%
-\contentsline {subsection}{\numberline {2.3.4}Decisión técnica: imagen de Kafka}{11}{subsection.2.3.4}%
-\contentsline {subsection}{\numberline {2.3.5}Modo KRaft en lugar de Zookeeper}{11}{subsection.2.3.5}%
-\contentsline {section}{\numberline {2.4}Verificación}{11}{section.2.4}%
-\contentsline {subsection}{\numberline {2.4.1}Levantar los servicios}{11}{subsection.2.4.1}%
-\contentsline {subsection}{\numberline {2.4.2}PostgreSQL}{12}{subsection.2.4.2}%
-\contentsline {subsection}{\numberline {2.4.3}Redis}{12}{subsection.2.4.3}%
-\contentsline {subsection}{\numberline {2.4.4}Kafka}{12}{subsection.2.4.4}%
-\contentsline {subsection}{\numberline {2.4.5}Kafka UI}{12}{subsection.2.4.5}%
-\contentsline {section}{\numberline {2.5}Resultado}{12}{section.2.5}%
-\contentsline {chapter}{\numberline {3}Sesión 2: Backend Spring Boot base}{14}{chapter.3}%
-\contentsline {section}{\numberline {3.1}Objetivo de la sesión}{14}{section.3.1}%
-\contentsline {section}{\numberline {3.2}Contexto}{14}{section.3.2}%
-\contentsline {section}{\numberline {3.3}Desarrollo}{14}{section.3.3}%
-\contentsline {subsection}{\numberline {3.3.1}Generación del proyecto}{14}{subsection.3.3.1}%
-\contentsline {subsection}{\numberline {3.3.2}Dependencias adicionales}{15}{subsection.3.3.2}%
-\contentsline {subsection}{\numberline {3.3.3}Entidades JPA}{15}{subsection.3.3.3}%
-\contentsline {subsubsection}{\texttt {User}}{15}{subsection.3.3.3}%
-\contentsline {subsubsection}{Enumeraciones del dominio}{16}{lstnumber.-11.33}%
-\contentsline {subsubsection}{\texttt {Channel}, \texttt {Post} y \texttt {Subscription}}{16}{lstnumber.-12.5}%
-\contentsline {subsection}{\numberline {3.3.4}Repositorios Spring Data}{16}{subsection.3.3.4}%
-\contentsline {subsection}{\numberline {3.3.5}Migración Flyway}{17}{subsection.3.3.5}%
-\contentsline {subsection}{\numberline {3.3.6}Configuración (\texttt {application.yml})}{18}{subsection.3.3.6}%
-\contentsline {subsection}{\numberline {3.3.7}Clase principal}{19}{subsection.3.3.7}%
-\contentsline {section}{\numberline {3.4}Verificación}{19}{section.3.4}%
-\contentsline {section}{\numberline {3.5}Resultado}{20}{section.3.5}%
-\contentsline {chapter}{\numberline {4}Sesión 3: Seguridad JWT y autenticación}{21}{chapter.4}%
-\contentsline {section}{\numberline {4.1}Objetivo de la sesión}{21}{section.4.1}%
-\contentsline {section}{\numberline {4.2}Contexto}{21}{section.4.2}%
-\contentsline {section}{\numberline {4.3}Desarrollo}{21}{section.4.3}%
-\contentsline {subsection}{\numberline {4.3.1}Estructura creada}{21}{subsection.4.3.1}%
-\contentsline {subsection}{\numberline {4.3.2}Decisiones técnicas}{22}{subsection.4.3.2}%
-\contentsline {subsection}{\numberline {4.3.3}Componentes clave}{22}{subsection.4.3.3}%
-\contentsline {subsubsection}{\texttt {JwtService}}{22}{subsection.4.3.3}%
-\contentsline {subsubsection}{\texttt {JwtAuthenticationFilter}}{22}{lstnumber.-20.5}%
-\contentsline {subsubsection}{\texttt {SecurityConfig}}{23}{Item.15}%
-\contentsline {subsubsection}{\texttt {AuthService}}{23}{Item.15}%
-\contentsline {subsection}{\numberline {4.3.4}\texttt {AuthController}}{23}{subsection.4.3.4}%
-\contentsline {subsection}{\numberline {4.3.5}Manejo global de errores}{23}{subsection.4.3.5}%
-\contentsline {subsection}{\numberline {4.3.6}Ajustes al \texttt {application.yml}}{24}{subsection.4.3.6}%
-\contentsline {section}{\numberline {4.4}Verificación}{24}{section.4.4}%
-\contentsline {subsection}{\numberline {4.4.1}Registro}{24}{subsection.4.4.1}%
-\contentsline {subsection}{\numberline {4.4.2}Login}{24}{subsection.4.4.2}%
-\contentsline {subsection}{\numberline {4.4.3}Refresh}{24}{subsection.4.4.3}%
-\contentsline {subsection}{\numberline {4.4.4}Verificar hash en PostgreSQL}{25}{subsection.4.4.4}%
-\contentsline {subsection}{\numberline {4.4.5}Comprobar que arranca sin contraseña temporal}{25}{subsection.4.4.5}%
-\contentsline {section}{\numberline {4.5}Resultado}{25}{section.4.5}%
-\contentsline {chapter}{\numberline {5}Sesión 4: Canales, suscripciones y publicaciones}{26}{chapter.5}%
-\contentsline {section}{\numberline {5.1}Objetivo de la sesión}{26}{section.5.1}%
-\contentsline {section}{\numberline {5.2}Contexto}{26}{section.5.2}%
-\contentsline {section}{\numberline {5.3}Desarrollo}{26}{section.5.3}%
-\contentsline {subsection}{\numberline {5.3.1}Estructura creada}{26}{subsection.5.3.1}%
-\contentsline {subsection}{\numberline {5.3.2}Decisiones técnicas}{27}{subsection.5.3.2}%
-\contentsline {subsection}{\numberline {5.3.3}Componentes clave}{27}{subsection.5.3.3}%
-\contentsline {subsubsection}{\texttt {CurrentUser}}{27}{subsection.5.3.3}%
-\contentsline {subsubsection}{Excepciones del dominio}{27}{lstnumber.-29.7}%
-\contentsline {subsubsection}{Ampliación de \texttt {GlobalExceptionHandler}}{28}{lstnumber.-29.7}%
-\contentsline {subsubsection}{\texttt {ChannelService}}{28}{lstnumber.-30.5}%
-\contentsline {subsubsection}{\texttt {SubscriptionService}}{28}{lstnumber.-30.5}%
-\contentsline {subsubsection}{\texttt {PostService}}{28}{lstnumber.-30.5}%
-\contentsline {subsubsection}{\texttt {ChannelController}}{28}{lstnumber.-30.5}%
-\contentsline {subsection}{\numberline {5.3.4}Cambios a archivos previos}{29}{subsection.5.3.4}%
-\contentsline {section}{\numberline {5.4}Verificación}{29}{section.5.4}%
-\contentsline {subsection}{\numberline {5.4.1}Preparar variables}{29}{subsection.5.4.1}%
-\contentsline {subsection}{\numberline {5.4.2}Crear, suscribirse y publicar}{29}{subsection.5.4.2}%
-\contentsline {subsection}{\numberline {5.4.3}Listar}{30}{subsection.5.4.3}%
-\contentsline {subsection}{\numberline {5.4.4}Verificar seguridad}{30}{subsection.5.4.4}%
-\contentsline {section}{\numberline {5.5}Resultado}{31}{section.5.5}%
-\contentsline {chapter}{\numberline {6}Sesión 5: Kafka productor, consumidor y notificaciones}{32}{chapter.6}%
-\contentsline {section}{\numberline {6.1}Objetivo de la sesión}{32}{section.6.1}%
-\contentsline {section}{\numberline {6.2}Contexto}{32}{section.6.2}%
-\contentsline {section}{\numberline {6.3}Desarrollo}{32}{section.6.3}%
-\contentsline {subsection}{\numberline {6.3.1}Estructura creada}{32}{subsection.6.3.1}%
-\contentsline {subsection}{\numberline {6.3.2}Decisiones técnicas}{33}{subsection.6.3.2}%
-\contentsline {subsection}{\numberline {6.3.3}Componentes clave}{33}{subsection.6.3.3}%
-\contentsline {subsubsection}{\texttt {KafkaConfig}}{33}{subsection.6.3.3}%
-\contentsline {subsubsection}{\texttt {PostCreatedEvent}}{33}{lstnumber.-38.12}%
-\contentsline {subsubsection}{\texttt {PostEventPublisher}}{34}{lstnumber.-39.9}%
-\contentsline {subsubsection}{\texttt {UnreadCounterService}}{34}{lstnumber.-40.15}%
-\contentsline {subsubsection}{\texttt {PostNotificationConsumer}}{34}{lstnumber.-41.11}%
-\contentsline {subsubsection}{Modificación a \texttt {PostService}}{35}{lstnumber.-42.14}%
-\contentsline {subsubsection}{\texttt {MeController}}{35}{lstnumber.-43.9}%
-\contentsline {subsection}{\numberline {6.3.4}Cambios a archivos previos}{35}{subsection.6.3.4}%
-\contentsline {subsection}{\numberline {6.3.5}Problemas encontrados y solución}{36}{subsection.6.3.5}%
-\contentsline {subsubsection}{Método \texttt {create} duplicado en \texttt {PostService}}{36}{subsection.6.3.5}%
-\contentsline {subsubsection}{\texttt {MeController} faltante}{36}{lstnumber.-45.1}%
-\contentsline {section}{\numberline {6.4}Verificación}{36}{section.6.4}%
-\contentsline {subsection}{\numberline {6.4.1}Preparar dos usuarios}{36}{subsection.6.4.1}%
-\contentsline {subsection}{\numberline {6.4.2}Publicar y observar los logs}{36}{subsection.6.4.2}%
-\contentsline {subsection}{\numberline {6.4.3}Consultar y limpiar contadores}{37}{subsection.6.4.3}%
-\contentsline {subsection}{\numberline {6.4.4}Verificación en Redis}{37}{subsection.6.4.4}%
-\contentsline {subsection}{\numberline {6.4.5}Verificación en Kafka UI}{38}{subsection.6.4.5}%
-\contentsline {section}{\numberline {6.5}Resultado}{38}{section.6.5}%
-\contentsline {chapter}{\numberline {7}Sesión 6a: Setup del cliente Flutter y autenticación}{39}{chapter.7}%
-\contentsline {section}{\numberline {7.1}Objetivo de la sesión}{39}{section.7.1}%
-\contentsline {section}{\numberline {7.2}Contexto}{39}{section.7.2}%
-\contentsline {section}{\numberline {7.3}Desarrollo}{39}{section.7.3}%
-\contentsline {subsection}{\numberline {7.3.1}Generación del proyecto}{39}{subsection.7.3.1}%
-\contentsline {subsection}{\numberline {7.3.2}Dependencias}{40}{subsection.7.3.2}%
-\contentsline {subsection}{\numberline {7.3.3}Estructura de carpetas}{40}{subsection.7.3.3}%
-\contentsline {subsection}{\numberline {7.3.4}Decisiones técnicas}{40}{subsection.7.3.4}%
-\contentsline {subsection}{\numberline {7.3.5}Detección de plataforma para la URL del backend}{41}{subsection.7.3.5}%
-\contentsline {subsection}{\numberline {7.3.6}Configuración Android}{41}{subsection.7.3.6}%
-\contentsline {subsection}{\numberline {7.3.7}Cambios a archivos previos}{41}{subsection.7.3.7}%
-\contentsline {subsection}{\numberline {7.3.8}Problemas encontrados y solución}{41}{subsection.7.3.8}%
-\contentsline {subsubsection}{Falta el SDK de Android}{41}{subsection.7.3.8}%
-\contentsline {subsubsection}{Clang++ no encontraba \texttt {libstdc++}}{42}{lstnumber.-56.3}%
-\contentsline {subsubsection}{Falta \texttt {libsecret-1-dev}}{42}{lstnumber.-58.1}%
-\contentsline {subsubsection}{Archivos \texttt {api\_client.dart} y \texttt {token\_storage.dart} con contenido duplicado}{42}{lstnumber.-60.1}%
-\contentsline {section}{\numberline {7.4}Verificación}{42}{section.7.4}%
-\contentsline {subsection}{\numberline {7.4.1}Arranque}{42}{subsection.7.4.1}%
-\contentsline {subsection}{\numberline {7.4.2}Flujo verificado}{43}{subsection.7.4.2}%
-\contentsline {section}{\numberline {7.5}Resultado}{43}{section.7.5}%
-\contentsline {chapter}{\numberline {8}Sesión 6b: Listado, búsqueda y creación de canales}{44}{chapter.8}%
-\contentsline {section}{\numberline {8.1}Objetivo de la sesión}{44}{section.8.1}%
-\contentsline {section}{\numberline {8.2}Contexto}{44}{section.8.2}%
-\contentsline {section}{\numberline {8.3}Desarrollo}{44}{section.8.3}%
-\contentsline {subsection}{\numberline {8.3.1}Archivos nuevos}{44}{subsection.8.3.1}%
-\contentsline {subsection}{\numberline {8.3.2}Archivos modificados}{45}{subsection.8.3.2}%
-\contentsline {subsection}{\numberline {8.3.3}Decisiones técnicas}{45}{subsection.8.3.3}%
-\contentsline {subsection}{\numberline {8.3.4}Componentes clave}{45}{subsection.8.3.4}%
-\contentsline {subsubsection}{\texttt {ChannelProvider}}{45}{subsection.8.3.4}%
-\contentsline {subsubsection}{\texttt {ExploreScreen}}{45}{lstnumber.-64.5}%
-\contentsline {subsubsection}{\texttt {ChannelDetailScreen}}{46}{lstnumber.-64.5}%
-\contentsline {subsubsection}{\texttt {CreateChannelScreen}}{46}{lstnumber.-64.5}%
-\contentsline {subsubsection}{\texttt {HomeShell} actualizado}{46}{lstnumber.-64.5}%
-\contentsline {subsection}{\numberline {8.3.5}Cambios a archivos previos}{47}{subsection.8.3.5}%
-\contentsline {section}{\numberline {8.4}Verificación}{47}{section.8.4}%
-\contentsline {subsection}{\numberline {8.4.1}Compilación}{47}{subsection.8.4.1}%
-\contentsline {subsection}{\numberline {8.4.2}Flujo verificado}{47}{subsection.8.4.2}%
-\contentsline {section}{\numberline {8.5}Resultado}{47}{section.8.5}%
-\contentsline {chapter}{\numberline {9}Sesión 6c: Publicaciones y contadores de no leídos en Flutter}{49}{chapter.9}%
-\contentsline {section}{\numberline {9.1}Objetivo de la sesión}{49}{section.9.1}%
-\contentsline {section}{\numberline {9.2}Contexto}{49}{section.9.2}%
-\contentsline {section}{\numberline {9.3}Desarrollo}{49}{section.9.3}%
-\contentsline {subsection}{\numberline {9.3.1}Archivos nuevos}{49}{subsection.9.3.1}%
-\contentsline {subsection}{\numberline {9.3.2}Archivos modificados}{49}{subsection.9.3.2}%
-\contentsline {subsection}{\numberline {9.3.3}Decisiones tecnicas}{50}{subsection.9.3.3}%
-\contentsline {subsection}{\numberline {9.3.4}Componentes clave}{50}{subsection.9.3.4}%
-\contentsline {subsubsection}{\texttt {PostProvider}}{50}{subsection.9.3.4}%
-\contentsline {subsubsection}{\texttt {UnreadProvider}}{50}{lstnumber.-68.11}%
-\contentsline {subsubsection}{Pantalla de detalle del canal}{51}{lstnumber.-69.10}%
-\contentsline {subsection}{\numberline {9.3.5}Cambios a archivos previos}{51}{subsection.9.3.5}%
-\contentsline {subsection}{\numberline {9.3.6}Problemas encontrados y solucion}{51}{subsection.9.3.6}%
-\contentsline {subsubsection}{Locale de fechas no inicializado}{51}{subsection.9.3.6}%
-\contentsline {section}{\numberline {9.4}Verificacion}{51}{section.9.4}%
-\contentsline {section}{\numberline {9.5}Resultado}{52}{section.9.5}%
-\contentsline {chapter}{\numberline {10}Rediseno UX/UI con paleta UAM-C}{53}{chapter.10}%
-\contentsline {section}{\numberline {10.1}Objetivo}{53}{section.10.1}%
-\contentsline {section}{\numberline {10.2}Contexto}{53}{section.10.2}%
-\contentsline {section}{\numberline {10.3}Desarrollo}{53}{section.10.3}%
-\contentsline {subsection}{\numberline {10.3.1}Diagnostico del problema de iconos}{53}{subsection.10.3.1}%
-\contentsline {subsection}{\numberline {10.3.2}Correccion del \texttt {pubspec.yaml}}{53}{subsection.10.3.2}%
-\contentsline {subsection}{\numberline {10.3.3}Paleta institucional}{54}{subsection.10.3.3}%
-\contentsline {subsection}{\numberline {10.3.4}Centralizacion del tema}{54}{subsection.10.3.4}%
-\contentsline {subsection}{\numberline {10.3.5}Rediseno de pantallas}{55}{subsection.10.3.5}%
-\contentsline {subsubsection}{Login}{55}{subsection.10.3.5}%
-\contentsline {subsubsection}{Registro}{55}{subsection.10.3.5}%
-\contentsline {subsection}{\numberline {10.3.6}Cambios a archivos previos}{55}{subsection.10.3.6}%
-\contentsline {section}{\numberline {10.4}Verificacion}{55}{section.10.4}%
-\contentsline {section}{\numberline {10.5}Resultado}{56}{section.10.5}%
-\contentsline {chapter}{\numberline {11}Backend: reportes, votacion y roles}{57}{chapter.11}%
-\contentsline {section}{\numberline {11.1}Objetivo}{57}{section.11.1}%
-\contentsline {section}{\numberline {11.2}Contexto}{57}{section.11.2}%
-\contentsline {section}{\numberline {11.3}Desarrollo}{57}{section.11.3}%
-\contentsline {subsection}{\numberline {11.3.1}Migracion V2}{57}{subsection.11.3.1}%
-\contentsline {subsection}{\numberline {11.3.2}Enumeraciones}{58}{subsection.11.3.2}%
-\contentsline {subsection}{\numberline {11.3.3}Entidades JPA}{58}{subsection.11.3.3}%
-\contentsline {subsection}{\numberline {11.3.4}Repositorios}{59}{subsection.11.3.4}%
-\contentsline {subsection}{\numberline {11.3.5}\texttt {ReportService}}{59}{subsection.11.3.5}%
-\contentsline {subsection}{\numberline {11.3.6}\texttt {AdminUserService}}{60}{subsection.11.3.6}%
-\contentsline {subsection}{\numberline {11.3.7}Moderacion directa por dueno del canal}{61}{subsection.11.3.7}%
-\contentsline {subsection}{\numberline {11.3.8}Endpoints}{62}{subsection.11.3.8}%
-\contentsline {subsection}{\numberline {11.3.9}Habilitacion de \texttt {@PreAuthorize}}{62}{subsection.11.3.9}%
-\contentsline {subsection}{\numberline {11.3.10}Problemas encontrados y solucion}{62}{subsection.11.3.10}%
-\contentsline {subsubsection}{\texttt {LazyInitializationException} en el endpoint de auditoria}{62}{subsection.11.3.10}%
-\contentsline {section}{\numberline {11.4}Verificacion}{62}{section.11.4}%
-\contentsline {subsection}{\numberline {11.4.1}Reglas de rol}{62}{subsection.11.4.1}%
-\contentsline {subsection}{\numberline {11.4.2}Flujo de reporte y votacion}{63}{subsection.11.4.2}%
-\contentsline {subsection}{\numberline {11.4.3}Moderacion directa}{63}{subsection.11.4.3}%
-\contentsline {section}{\numberline {11.5}Resultado}{63}{section.11.5}%
-\contentsline {chapter}{\numberline {12}Flutter: reportar, moderar y administrar}{64}{chapter.12}%
-\contentsline {section}{\numberline {12.1}Objetivo}{64}{section.12.1}%
-\contentsline {section}{\numberline {12.2}Contexto}{64}{section.12.2}%
-\contentsline {section}{\numberline {12.3}Desarrollo}{64}{section.12.3}%
-\contentsline {subsection}{\numberline {12.3.1}Modelos nuevos}{64}{subsection.12.3.1}%
-\contentsline {subsection}{\numberline {12.3.2}Providers nuevos}{64}{subsection.12.3.2}%
-\contentsline {subsection}{\numberline {12.3.3}Wigets reutilizables}{65}{subsection.12.3.3}%
-\contentsline {subsubsection}{\texttt {ReportDialog}}{65}{subsection.12.3.3}%
-\contentsline {subsection}{\numberline {12.3.4}Menu contextual en publicaciones}{65}{subsection.12.3.4}%
-\contentsline {subsection}{\numberline {12.3.5}Pantalla \texttt {AdminScreen}}{65}{subsection.12.3.5}%
-\contentsline {subsection}{\numberline {12.3.6}\texttt {AdminReportsTab}}{66}{subsection.12.3.6}%
-\contentsline {subsection}{\numberline {12.3.7}\texttt {ReportDetailScreen}}{66}{subsection.12.3.7}%
-\contentsline {subsection}{\numberline {12.3.8}\texttt {AdminUsersTab}}{66}{subsection.12.3.8}%
-\contentsline {subsection}{\numberline {12.3.9}Bottom sheet de acciones}{67}{subsection.12.3.9}%
-\contentsline {subsection}{\numberline {12.3.10}\texttt {AdminAuditTab}}{67}{subsection.12.3.10}%
-\contentsline {subsection}{\numberline {12.3.11}Cambios a archivos previos}{67}{subsection.12.3.11}%
-\contentsline {section}{\numberline {12.4}Verificacion}{67}{section.12.4}%
-\contentsline {section}{\numberline {12.5}Resultado}{67}{section.12.5}%
-\contentsline {chapter}{\numberline {13}Distintivo visual de canales institucionales}{69}{chapter.13}%
-\contentsline {section}{\numberline {13.1}Objetivo}{69}{section.13.1}%
-\contentsline {section}{\numberline {13.2}Contexto}{69}{section.13.2}%
-\contentsline {section}{\numberline {13.3}Desarrollo}{69}{section.13.3}%
-\contentsline {subsection}{\numberline {13.3.1}Cambio en el backend}{69}{subsection.13.3.1}%
-\contentsline {subsection}{\numberline {13.3.2}Modelo en Flutter}{70}{subsection.13.3.2}%
-\contentsline {subsection}{\numberline {13.3.3}Wiget \texttt {ChannelOwnerBadge}}{70}{subsection.13.3.3}%
-\contentsline {subsection}{\numberline {13.3.4}Ubicaciones del badge}{70}{subsection.13.3.4}%
-\contentsline {section}{\numberline {13.4}Verificacion}{71}{section.13.4}%
-\contentsline {section}{\numberline {13.5}Resultado}{71}{section.13.5}%
+\contentsline {chapter}{\numberline {1}Introducción}{7}{chapter.1}%
+\contentsline {section}{\numberline {1.1}Objetivo}{7}{section.1.1}%
+\contentsline {section}{\numberline {1.2}Organización}{7}{section.1.2}%
+\contentsline {section}{\numberline {1.3}Sesiones documentadas}{7}{section.1.3}%
+\contentsline {section}{\numberline {1.4}Convenciones}{8}{section.1.4}%
+\contentsline {chapter}{\numberline {2}Sesión 1: Infraestructura base con Docker}{9}{chapter.2}%
+\contentsline {section}{\numberline {2.1}Objetivo de la sesión}{9}{section.2.1}%
+\contentsline {section}{\numberline {2.2}Contexto}{9}{section.2.2}%
+\contentsline {section}{\numberline {2.3}Desarrollo}{9}{section.2.3}%
+\contentsline {subsection}{\numberline {2.3.1}Estructura del repositorio}{9}{subsection.2.3.1}%
+\contentsline {subsection}{\numberline {2.3.2}Variables de entorno (\texttt {.env})}{10}{subsection.2.3.2}%
+\contentsline {subsection}{\numberline {2.3.3}\texttt {docker-compose.yml}}{10}{subsection.2.3.3}%
+\contentsline {subsection}{\numberline {2.3.4}Decisión técnica: imagen de Kafka}{12}{subsection.2.3.4}%
+\contentsline {subsection}{\numberline {2.3.5}Modo KRaft en lugar de Zookeeper}{12}{subsection.2.3.5}%
+\contentsline {section}{\numberline {2.4}Verificación}{12}{section.2.4}%
+\contentsline {subsection}{\numberline {2.4.1}Levantar los servicios}{12}{subsection.2.4.1}%
+\contentsline {subsection}{\numberline {2.4.2}PostgreSQL}{13}{subsection.2.4.2}%
+\contentsline {subsection}{\numberline {2.4.3}Redis}{13}{subsection.2.4.3}%
+\contentsline {subsection}{\numberline {2.4.4}Kafka}{13}{subsection.2.4.4}%
+\contentsline {subsection}{\numberline {2.4.5}Kafka UI}{13}{subsection.2.4.5}%
+\contentsline {section}{\numberline {2.5}Resultado}{13}{section.2.5}%
+\contentsline {chapter}{\numberline {3}Sesión 2: Backend Spring Boot base}{15}{chapter.3}%
+\contentsline {section}{\numberline {3.1}Objetivo de la sesión}{15}{section.3.1}%
+\contentsline {section}{\numberline {3.2}Contexto}{15}{section.3.2}%
+\contentsline {section}{\numberline {3.3}Desarrollo}{15}{section.3.3}%
+\contentsline {subsection}{\numberline {3.3.1}Generación del proyecto}{15}{subsection.3.3.1}%
+\contentsline {subsection}{\numberline {3.3.2}Dependencias adicionales}{16}{subsection.3.3.2}%
+\contentsline {subsection}{\numberline {3.3.3}Entidades JPA}{16}{subsection.3.3.3}%
+\contentsline {subsubsection}{\texttt {User}}{16}{subsection.3.3.3}%
+\contentsline {subsubsection}{Enumeraciones del dominio}{17}{lstnumber.-11.33}%
+\contentsline {subsubsection}{\texttt {Channel}, \texttt {Post} y \texttt {Subscription}}{17}{lstnumber.-12.5}%
+\contentsline {subsection}{\numberline {3.3.4}Repositorios Spring Data}{17}{subsection.3.3.4}%
+\contentsline {subsection}{\numberline {3.3.5}Migración Flyway}{18}{subsection.3.3.5}%
+\contentsline {subsection}{\numberline {3.3.6}Configuración (\texttt {application.yml})}{19}{subsection.3.3.6}%
+\contentsline {subsection}{\numberline {3.3.7}Clase principal}{20}{subsection.3.3.7}%
+\contentsline {section}{\numberline {3.4}Verificación}{20}{section.3.4}%
+\contentsline {section}{\numberline {3.5}Resultado}{21}{section.3.5}%
+\contentsline {chapter}{\numberline {4}Sesión 3: Seguridad JWT y autenticación}{22}{chapter.4}%
+\contentsline {section}{\numberline {4.1}Objetivo de la sesión}{22}{section.4.1}%
+\contentsline {section}{\numberline {4.2}Contexto}{22}{section.4.2}%
+\contentsline {section}{\numberline {4.3}Desarrollo}{22}{section.4.3}%
+\contentsline {subsection}{\numberline {4.3.1}Estructura creada}{22}{subsection.4.3.1}%
+\contentsline {subsection}{\numberline {4.3.2}Decisiones técnicas}{23}{subsection.4.3.2}%
+\contentsline {subsection}{\numberline {4.3.3}Componentes clave}{23}{subsection.4.3.3}%
+\contentsline {subsubsection}{\texttt {JwtService}}{23}{subsection.4.3.3}%
+\contentsline {subsubsection}{\texttt {JwtAuthenticationFilter}}{23}{lstnumber.-20.5}%
+\contentsline {subsubsection}{\texttt {SecurityConfig}}{24}{Item.15}%
+\contentsline {subsubsection}{\texttt {AuthService}}{24}{Item.15}%
+\contentsline {subsection}{\numberline {4.3.4}\texttt {AuthController}}{24}{subsection.4.3.4}%
+\contentsline {subsection}{\numberline {4.3.5}Manejo global de errores}{24}{subsection.4.3.5}%
+\contentsline {subsection}{\numberline {4.3.6}Ajustes al \texttt {application.yml}}{25}{subsection.4.3.6}%
+\contentsline {section}{\numberline {4.4}Verificación}{25}{section.4.4}%
+\contentsline {subsection}{\numberline {4.4.1}Registro}{25}{subsection.4.4.1}%
+\contentsline {subsection}{\numberline {4.4.2}Login}{25}{subsection.4.4.2}%
+\contentsline {subsection}{\numberline {4.4.3}Refresh}{25}{subsection.4.4.3}%
+\contentsline {subsection}{\numberline {4.4.4}Verificar hash en PostgreSQL}{26}{subsection.4.4.4}%
+\contentsline {subsection}{\numberline {4.4.5}Comprobar que arranca sin contraseña temporal}{26}{subsection.4.4.5}%
+\contentsline {section}{\numberline {4.5}Resultado}{26}{section.4.5}%
+\contentsline {chapter}{\numberline {5}Sesión 4: Canales, suscripciones y publicaciones}{27}{chapter.5}%
+\contentsline {section}{\numberline {5.1}Objetivo de la sesión}{27}{section.5.1}%
+\contentsline {section}{\numberline {5.2}Contexto}{27}{section.5.2}%
+\contentsline {section}{\numberline {5.3}Desarrollo}{27}{section.5.3}%
+\contentsline {subsection}{\numberline {5.3.1}Estructura creada}{27}{subsection.5.3.1}%
+\contentsline {subsection}{\numberline {5.3.2}Decisiones técnicas}{28}{subsection.5.3.2}%
+\contentsline {subsection}{\numberline {5.3.3}Componentes clave}{28}{subsection.5.3.3}%
+\contentsline {subsubsection}{\texttt {CurrentUser}}{28}{subsection.5.3.3}%
+\contentsline {subsubsection}{Excepciones del dominio}{28}{lstnumber.-29.7}%
+\contentsline {subsubsection}{Ampliación de \texttt {GlobalExceptionHandler}}{29}{lstnumber.-29.7}%
+\contentsline {subsubsection}{\texttt {ChannelService}}{29}{lstnumber.-30.5}%
+\contentsline {subsubsection}{\texttt {SubscriptionService}}{29}{lstnumber.-30.5}%
+\contentsline {subsubsection}{\texttt {PostService}}{29}{lstnumber.-30.5}%
+\contentsline {subsubsection}{\texttt {ChannelController}}{29}{lstnumber.-30.5}%
+\contentsline {subsection}{\numberline {5.3.4}Cambios a archivos previos}{30}{subsection.5.3.4}%
+\contentsline {section}{\numberline {5.4}Verificación}{30}{section.5.4}%
+\contentsline {subsection}{\numberline {5.4.1}Preparar variables}{30}{subsection.5.4.1}%
+\contentsline {subsection}{\numberline {5.4.2}Crear, suscribirse y publicar}{30}{subsection.5.4.2}%
+\contentsline {subsection}{\numberline {5.4.3}Listar}{31}{subsection.5.4.3}%
+\contentsline {subsection}{\numberline {5.4.4}Verificar seguridad}{31}{subsection.5.4.4}%
+\contentsline {section}{\numberline {5.5}Resultado}{32}{section.5.5}%
+\contentsline {chapter}{\numberline {6}Sesión 5: Kafka productor, consumidor y notificaciones}{33}{chapter.6}%
+\contentsline {section}{\numberline {6.1}Objetivo de la sesión}{33}{section.6.1}%
+\contentsline {section}{\numberline {6.2}Contexto}{33}{section.6.2}%
+\contentsline {section}{\numberline {6.3}Desarrollo}{33}{section.6.3}%
+\contentsline {subsection}{\numberline {6.3.1}Estructura creada}{33}{subsection.6.3.1}%
+\contentsline {subsection}{\numberline {6.3.2}Decisiones técnicas}{34}{subsection.6.3.2}%
+\contentsline {subsection}{\numberline {6.3.3}Componentes clave}{34}{subsection.6.3.3}%
+\contentsline {subsubsection}{\texttt {KafkaConfig}}{34}{subsection.6.3.3}%
+\contentsline {subsubsection}{\texttt {PostCreatedEvent}}{34}{lstnumber.-38.12}%
+\contentsline {subsubsection}{\texttt {PostEventPublisher}}{35}{lstnumber.-39.9}%
+\contentsline {subsubsection}{\texttt {UnreadCounterService}}{35}{lstnumber.-40.15}%
+\contentsline {subsubsection}{\texttt {PostNotificationConsumer}}{35}{lstnumber.-41.11}%
+\contentsline {subsubsection}{Modificación a \texttt {PostService}}{36}{lstnumber.-42.14}%
+\contentsline {subsubsection}{\texttt {MeController}}{36}{lstnumber.-43.9}%
+\contentsline {subsection}{\numberline {6.3.4}Cambios a archivos previos}{36}{subsection.6.3.4}%
+\contentsline {subsection}{\numberline {6.3.5}Problemas encontrados y solución}{37}{subsection.6.3.5}%
+\contentsline {subsubsection}{Método \texttt {create} duplicado en \texttt {PostService}}{37}{subsection.6.3.5}%
+\contentsline {subsubsection}{\texttt {MeController} faltante}{37}{lstnumber.-45.1}%
+\contentsline {section}{\numberline {6.4}Verificación}{37}{section.6.4}%
+\contentsline {subsection}{\numberline {6.4.1}Preparar dos usuarios}{37}{subsection.6.4.1}%
+\contentsline {subsection}{\numberline {6.4.2}Publicar y observar los logs}{37}{subsection.6.4.2}%
+\contentsline {subsection}{\numberline {6.4.3}Consultar y limpiar contadores}{38}{subsection.6.4.3}%
+\contentsline {subsection}{\numberline {6.4.4}Verificación en Redis}{38}{subsection.6.4.4}%
+\contentsline {subsection}{\numberline {6.4.5}Verificación en Kafka UI}{39}{subsection.6.4.5}%
+\contentsline {section}{\numberline {6.5}Resultado}{39}{section.6.5}%
+\contentsline {chapter}{\numberline {7}Sesión 6a: Setup del cliente Flutter y autenticación}{40}{chapter.7}%
+\contentsline {section}{\numberline {7.1}Objetivo de la sesión}{40}{section.7.1}%
+\contentsline {section}{\numberline {7.2}Contexto}{40}{section.7.2}%
+\contentsline {section}{\numberline {7.3}Desarrollo}{40}{section.7.3}%
+\contentsline {subsection}{\numberline {7.3.1}Generación del proyecto}{40}{subsection.7.3.1}%
+\contentsline {subsection}{\numberline {7.3.2}Dependencias}{41}{subsection.7.3.2}%
+\contentsline {subsection}{\numberline {7.3.3}Estructura de carpetas}{41}{subsection.7.3.3}%
+\contentsline {subsection}{\numberline {7.3.4}Decisiones técnicas}{41}{subsection.7.3.4}%
+\contentsline {subsection}{\numberline {7.3.5}Detección de plataforma para la URL del backend}{42}{subsection.7.3.5}%
+\contentsline {subsection}{\numberline {7.3.6}Configuración Android}{42}{subsection.7.3.6}%
+\contentsline {subsection}{\numberline {7.3.7}Cambios a archivos previos}{42}{subsection.7.3.7}%
+\contentsline {subsection}{\numberline {7.3.8}Problemas encontrados y solución}{42}{subsection.7.3.8}%
+\contentsline {subsubsection}{Falta el SDK de Android}{42}{subsection.7.3.8}%
+\contentsline {subsubsection}{Clang++ no encontraba \texttt {libstdc++}}{43}{lstnumber.-56.3}%
+\contentsline {subsubsection}{Falta \texttt {libsecret-1-dev}}{43}{lstnumber.-58.1}%
+\contentsline {subsubsection}{Archivos \texttt {api\_client.dart} y \texttt {token\_storage.dart} con contenido duplicado}{43}{lstnumber.-60.1}%
+\contentsline {section}{\numberline {7.4}Verificación}{43}{section.7.4}%
+\contentsline {subsection}{\numberline {7.4.1}Arranque}{43}{subsection.7.4.1}%
+\contentsline {subsection}{\numberline {7.4.2}Flujo verificado}{44}{subsection.7.4.2}%
+\contentsline {section}{\numberline {7.5}Resultado}{44}{section.7.5}%
+\contentsline {chapter}{\numberline {8}Sesión 6b: Listado, búsqueda y creación de canales}{45}{chapter.8}%
+\contentsline {section}{\numberline {8.1}Objetivo de la sesión}{45}{section.8.1}%
+\contentsline {section}{\numberline {8.2}Contexto}{45}{section.8.2}%
+\contentsline {section}{\numberline {8.3}Desarrollo}{45}{section.8.3}%
+\contentsline {subsection}{\numberline {8.3.1}Archivos nuevos}{45}{subsection.8.3.1}%
+\contentsline {subsection}{\numberline {8.3.2}Archivos modificados}{46}{subsection.8.3.2}%
+\contentsline {subsection}{\numberline {8.3.3}Decisiones técnicas}{46}{subsection.8.3.3}%
+\contentsline {subsection}{\numberline {8.3.4}Componentes clave}{46}{subsection.8.3.4}%
+\contentsline {subsubsection}{\texttt {ChannelProvider}}{46}{subsection.8.3.4}%
+\contentsline {subsubsection}{\texttt {ExploreScreen}}{46}{lstnumber.-64.5}%
+\contentsline {subsubsection}{\texttt {ChannelDetailScreen}}{47}{lstnumber.-64.5}%
+\contentsline {subsubsection}{\texttt {CreateChannelScreen}}{47}{lstnumber.-64.5}%
+\contentsline {subsubsection}{\texttt {HomeShell} actualizado}{47}{lstnumber.-64.5}%
+\contentsline {subsection}{\numberline {8.3.5}Cambios a archivos previos}{48}{subsection.8.3.5}%
+\contentsline {section}{\numberline {8.4}Verificación}{48}{section.8.4}%
+\contentsline {subsection}{\numberline {8.4.1}Compilación}{48}{subsection.8.4.1}%
+\contentsline {subsection}{\numberline {8.4.2}Flujo verificado}{48}{subsection.8.4.2}%
+\contentsline {section}{\numberline {8.5}Resultado}{48}{section.8.5}%
+\contentsline {chapter}{\numberline {9}Sesión 6c: Publicaciones y contadores de no leídos en Flutter}{50}{chapter.9}%
+\contentsline {section}{\numberline {9.1}Objetivo de la sesión}{50}{section.9.1}%
+\contentsline {section}{\numberline {9.2}Contexto}{50}{section.9.2}%
+\contentsline {section}{\numberline {9.3}Desarrollo}{50}{section.9.3}%
+\contentsline {subsection}{\numberline {9.3.1}Archivos nuevos}{50}{subsection.9.3.1}%
+\contentsline {subsection}{\numberline {9.3.2}Archivos modificados}{50}{subsection.9.3.2}%
+\contentsline {subsection}{\numberline {9.3.3}Decisiones tecnicas}{51}{subsection.9.3.3}%
+\contentsline {subsection}{\numberline {9.3.4}Componentes clave}{51}{subsection.9.3.4}%
+\contentsline {subsubsection}{\texttt {PostProvider}}{51}{subsection.9.3.4}%
+\contentsline {subsubsection}{\texttt {UnreadProvider}}{51}{lstnumber.-68.11}%
+\contentsline {subsubsection}{Pantalla de detalle del canal}{52}{lstnumber.-69.10}%
+\contentsline {subsection}{\numberline {9.3.5}Cambios a archivos previos}{52}{subsection.9.3.5}%
+\contentsline {subsection}{\numberline {9.3.6}Problemas encontrados y solucion}{52}{subsection.9.3.6}%
+\contentsline {subsubsection}{Locale de fechas no inicializado}{52}{subsection.9.3.6}%
+\contentsline {section}{\numberline {9.4}Verificacion}{52}{section.9.4}%
+\contentsline {section}{\numberline {9.5}Resultado}{53}{section.9.5}%
+\contentsline {chapter}{\numberline {10}Rediseno UX/UI con paleta UAM-C}{54}{chapter.10}%
+\contentsline {section}{\numberline {10.1}Objetivo}{54}{section.10.1}%
+\contentsline {section}{\numberline {10.2}Contexto}{54}{section.10.2}%
+\contentsline {section}{\numberline {10.3}Desarrollo}{54}{section.10.3}%
+\contentsline {subsection}{\numberline {10.3.1}Diagnostico del problema de iconos}{54}{subsection.10.3.1}%
+\contentsline {subsection}{\numberline {10.3.2}Correccion del \texttt {pubspec.yaml}}{54}{subsection.10.3.2}%
+\contentsline {subsection}{\numberline {10.3.3}Paleta institucional}{55}{subsection.10.3.3}%
+\contentsline {subsection}{\numberline {10.3.4}Centralizacion del tema}{55}{subsection.10.3.4}%
+\contentsline {subsection}{\numberline {10.3.5}Rediseno de pantallas}{56}{subsection.10.3.5}%
+\contentsline {subsubsection}{Login}{56}{subsection.10.3.5}%
+\contentsline {subsubsection}{Registro}{56}{subsection.10.3.5}%
+\contentsline {subsection}{\numberline {10.3.6}Cambios a archivos previos}{56}{subsection.10.3.6}%
+\contentsline {section}{\numberline {10.4}Verificacion}{56}{section.10.4}%
+\contentsline {section}{\numberline {10.5}Resultado}{57}{section.10.5}%
+\contentsline {chapter}{\numberline {11}Backend: reportes, votacion y roles}{58}{chapter.11}%
+\contentsline {section}{\numberline {11.1}Objetivo}{58}{section.11.1}%
+\contentsline {section}{\numberline {11.2}Contexto}{58}{section.11.2}%
+\contentsline {section}{\numberline {11.3}Desarrollo}{58}{section.11.3}%
+\contentsline {subsection}{\numberline {11.3.1}Migracion V2}{58}{subsection.11.3.1}%
+\contentsline {subsection}{\numberline {11.3.2}Enumeraciones}{59}{subsection.11.3.2}%
+\contentsline {subsection}{\numberline {11.3.3}Entidades JPA}{59}{subsection.11.3.3}%
+\contentsline {subsection}{\numberline {11.3.4}Repositorios}{60}{subsection.11.3.4}%
+\contentsline {subsection}{\numberline {11.3.5}\texttt {ReportService}}{60}{subsection.11.3.5}%
+\contentsline {subsection}{\numberline {11.3.6}\texttt {AdminUserService}}{61}{subsection.11.3.6}%
+\contentsline {subsection}{\numberline {11.3.7}Moderacion directa por dueno del canal}{62}{subsection.11.3.7}%
+\contentsline {subsection}{\numberline {11.3.8}Endpoints}{63}{subsection.11.3.8}%
+\contentsline {subsection}{\numberline {11.3.9}Habilitacion de \texttt {@PreAuthorize}}{63}{subsection.11.3.9}%
+\contentsline {subsection}{\numberline {11.3.10}Problemas encontrados y solucion}{63}{subsection.11.3.10}%
+\contentsline {subsubsection}{\texttt {LazyInitializationException} en el endpoint de auditoria}{63}{subsection.11.3.10}%
+\contentsline {section}{\numberline {11.4}Verificacion}{63}{section.11.4}%
+\contentsline {subsection}{\numberline {11.4.1}Reglas de rol}{63}{subsection.11.4.1}%
+\contentsline {subsection}{\numberline {11.4.2}Flujo de reporte y votacion}{64}{subsection.11.4.2}%
+\contentsline {subsection}{\numberline {11.4.3}Moderacion directa}{64}{subsection.11.4.3}%
+\contentsline {section}{\numberline {11.5}Resultado}{64}{section.11.5}%
+\contentsline {chapter}{\numberline {12}Flutter: reportar, moderar y administrar}{65}{chapter.12}%
+\contentsline {section}{\numberline {12.1}Objetivo}{65}{section.12.1}%
+\contentsline {section}{\numberline {12.2}Contexto}{65}{section.12.2}%
+\contentsline {section}{\numberline {12.3}Desarrollo}{65}{section.12.3}%
+\contentsline {subsection}{\numberline {12.3.1}Modelos nuevos}{65}{subsection.12.3.1}%
+\contentsline {subsection}{\numberline {12.3.2}Providers nuevos}{65}{subsection.12.3.2}%
+\contentsline {subsection}{\numberline {12.3.3}Wigets reutilizables}{66}{subsection.12.3.3}%
+\contentsline {subsubsection}{\texttt {ReportDialog}}{66}{subsection.12.3.3}%
+\contentsline {subsection}{\numberline {12.3.4}Menu contextual en publicaciones}{66}{subsection.12.3.4}%
+\contentsline {subsection}{\numberline {12.3.5}Pantalla \texttt {AdminScreen}}{66}{subsection.12.3.5}%
+\contentsline {subsection}{\numberline {12.3.6}\texttt {AdminReportsTab}}{67}{subsection.12.3.6}%
+\contentsline {subsection}{\numberline {12.3.7}\texttt {ReportDetailScreen}}{67}{subsection.12.3.7}%
+\contentsline {subsection}{\numberline {12.3.8}\texttt {AdminUsersTab}}{67}{subsection.12.3.8}%
+\contentsline {subsection}{\numberline {12.3.9}Bottom sheet de acciones}{68}{subsection.12.3.9}%
+\contentsline {subsection}{\numberline {12.3.10}\texttt {AdminAuditTab}}{68}{subsection.12.3.10}%
+\contentsline {subsection}{\numberline {12.3.11}Cambios a archivos previos}{68}{subsection.12.3.11}%
+\contentsline {section}{\numberline {12.4}Verificacion}{68}{section.12.4}%
+\contentsline {section}{\numberline {12.5}Resultado}{68}{section.12.5}%
+\contentsline {chapter}{\numberline {13}Distintivo visual de canales institucionales}{70}{chapter.13}%
+\contentsline {section}{\numberline {13.1}Objetivo}{70}{section.13.1}%
+\contentsline {section}{\numberline {13.2}Contexto}{70}{section.13.2}%
+\contentsline {section}{\numberline {13.3}Desarrollo}{70}{section.13.3}%
+\contentsline {subsection}{\numberline {13.3.1}Cambio en el backend}{70}{subsection.13.3.1}%
+\contentsline {subsection}{\numberline {13.3.2}Modelo en Flutter}{71}{subsection.13.3.2}%
+\contentsline {subsection}{\numberline {13.3.3}Wiget \texttt {ChannelOwnerBadge}}{71}{subsection.13.3.3}%
+\contentsline {subsection}{\numberline {13.3.4}Ubicaciones del badge}{71}{subsection.13.3.4}%
+\contentsline {section}{\numberline {13.4}Verificacion}{72}{section.13.4}%
+\contentsline {section}{\numberline {13.5}Resultado}{72}{section.13.5}%
+\contentsline {chapter}{\numberline {14}Notificaciones push reales con Firebase Cloud Messaging}{73}{chapter.14}%
+\contentsline {section}{\numberline {14.1}Objetivo}{73}{section.14.1}%
+\contentsline {section}{\numberline {14.2}Contexto}{73}{section.14.2}%
+\contentsline {section}{\numberline {14.3}Desarrollo}{73}{section.14.3}%
+\contentsline {subsection}{\numberline {14.3.1}F1: Configuracion en Firebase Console}{73}{subsection.14.3.1}%
+\contentsline {subsection}{\numberline {14.3.2}F2: Backend con Firebase Admin SDK}{74}{subsection.14.3.2}%
+\contentsline {subsubsection}{Dependencia}{74}{subsection.14.3.2}%
+\contentsline {subsubsection}{Migracion V3}{74}{lstnumber.-88.5}%
+\contentsline {subsubsection}{Inicializacion del SDK}{74}{lstnumber.-89.10}%
+\contentsline {subsubsection}{Servicio de envio}{75}{lstnumber.-90.26}%
+\contentsline {subsubsection}{Endpoints}{75}{lstnumber.-91.22}%
+\contentsline {subsubsection}{Modificacion a \texttt {PostNotificationConsumer}}{75}{lstnumber.-92.2}%
+\contentsline {subsection}{\numberline {14.3.3}F3: Configuracion Android y Flutter}{76}{subsection.14.3.3}%
+\contentsline {subsubsection}{Gradle}{76}{subsection.14.3.3}%
+\contentsline {subsubsection}{Permisos en AndroidManifest}{76}{lstnumber.-94.26}%
+\contentsline {subsubsection}{Dependencias Flutter}{77}{lstnumber.-96.3}%
+\contentsline {subsubsection}{\texttt {FcmService}}{77}{lstnumber.-97.3}%
+\contentsline {subsubsection}{Integracion con \texttt {AuthProvider}}{77}{lstnumber.-98.27}%
+\contentsline {subsection}{\numberline {14.3.4}F4: Manejo de notificaciones}{78}{subsection.14.3.4}%
+\contentsline {subsubsection}{Los tres estados}{78}{subsection.14.3.4}%
+\contentsline {subsubsection}{Background handler}{78}{table.14.1}%
+\contentsline {subsubsection}{Notificaciones locales}{78}{lstnumber.-101.1}%
+\contentsline {subsubsection}{Navegacion al canal}{79}{lstnumber.-103.9}%
+\contentsline {subsection}{\numberline {14.3.5}Cambios a archivos previos}{79}{subsection.14.3.5}%
+\contentsline {subsection}{\numberline {14.3.6}Problemas encontrados y solucion}{79}{subsection.14.3.6}%
+\contentsline {subsubsection}{Falta de \texttt {uses-material-design}}{79}{subsection.14.3.6}%
+\contentsline {subsubsection}{Core library desugaring}{80}{subsection.14.3.6}%
+\contentsline {subsubsection}{Dependencias de Firebase no declaradas}{80}{lstnumber.-105.2}%
+\contentsline {subsubsection}{Background handler no registrado}{80}{lstnumber.-105.2}%
+\contentsline {subsubsection}{Canal de notificaciones no creado}{80}{lstnumber.-106.2}%
+\contentsline {section}{\numberline {14.4}Verificacion}{80}{section.14.4}%
+\contentsline {subsection}{\numberline {14.4.1}Registro del token}{80}{subsection.14.4.1}%
+\contentsline {subsection}{\numberline {14.4.2}App en foreground}{80}{subsection.14.4.2}%
+\contentsline {subsection}{\numberline {14.4.3}App en background}{81}{subsection.14.4.3}%
+\contentsline {subsection}{\numberline {14.4.4}App cerrada (quit)}{81}{subsection.14.4.4}%
+\contentsline {subsection}{\numberline {14.4.5}Logs del backend}{81}{subsection.14.4.5}%
+\contentsline {section}{\numberline {14.5}Resultado}{81}{section.14.5}%
+\contentsline {chapter}{\numberline {15}Verificación de correo electrónico con OAuth2}{82}{chapter.15}%
+\contentsline {section}{\numberline {15.1}Objetivo}{82}{section.15.1}%
+\contentsline {section}{\numberline {15.2}Contexto}{82}{section.15.2}%
+\contentsline {section}{\numberline {15.3}Desarrollo}{82}{section.15.3}%
+\contentsline {subsection}{\numberline {15.3.1}Configuración en Google Cloud Console}{82}{subsection.15.3.1}%
+\contentsline {subsection}{\numberline {15.3.2}Configuración de Spring Boot}{83}{subsection.15.3.2}%
+\contentsline {subsection}{\numberline {15.3.3}Componentes del backend}{83}{subsection.15.3.3}%
+\contentsline {subsubsection}{\texttt {MailConfig}}{83}{subsection.15.3.3}%
+\contentsline {subsubsection}{\texttt {EmailService}}{84}{lstnumber.-115.33}%
+\contentsline {subsubsection}{Endpoint de desarrollo \texttt {register-dev}}{84}{lstnumber.-116.16}%
+\contentsline {subsection}{\numberline {15.3.4}Cambios a archivos previos}{85}{subsection.15.3.4}%
+\contentsline {subsection}{\numberline {15.3.5}Problemas encontrados y solución}{85}{subsection.15.3.5}%
+\contentsline {subsubsection}{Contraseña de aplicación bloqueada por Google Workspace}{85}{subsection.15.3.5}%
+\contentsline {subsubsection}{Error de credenciales inválidas en el Playground}{85}{subsection.15.3.5}%
+\contentsline {subsubsection}{\texttt {redirect\_uri\_mismatch}}{85}{subsection.15.3.5}%
+\contentsline {section}{\numberline {15.4}Verificación}{85}{section.15.4}%
+\contentsline {subsection}{\numberline {15.4.1}Prueba de envío real}{85}{subsection.15.4.1}%
+\contentsline {subsection}{\numberline {15.4.2}Prueba del atajo de desarrollo}{86}{subsection.15.4.2}%
+\contentsline {section}{\numberline {15.5}Resultado}{86}{section.15.5}%
+\contentsline {chapter}{\numberline {16}Autenticación con Google Sign-In}{87}{chapter.16}%
+\contentsline {section}{\numberline {16.1}Objetivo}{87}{section.16.1}%
+\contentsline {section}{\numberline {16.2}Contexto}{87}{section.16.2}%
+\contentsline {section}{\numberline {16.3}Desarrollo}{87}{section.16.3}%
+\contentsline {subsection}{\numberline {16.3.1}Configuración en Google Cloud Console}{87}{subsection.16.3.1}%
+\contentsline {subsection}{\numberline {16.3.2}Backend}{87}{subsection.16.3.2}%
+\contentsline {subsection}{\numberline {16.3.3}Cliente Flutter}{88}{subsection.16.3.3}%
+\contentsline {subsection}{\numberline {16.3.4}Problemas encontrados y solución}{89}{subsection.16.3.4}%
+\contentsline {subsubsection}{Error \texttt {ApiException: 10} en Android}{89}{subsection.16.3.4}%
+\contentsline {section}{\numberline {16.4}Verificación}{89}{section.16.4}%
+\contentsline {section}{\numberline {16.5}Resultado}{89}{section.16.5}%

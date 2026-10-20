@@ -1,0 +1,472 @@
+\chapter{Notificaciones push reales con Firebase Cloud Messaging}
+\label{ch:fcm}
+
+\section{Objetivo}
+
+Reemplazar la simulacion de notificaciones push de la Sesion~\ref{ch:sesion5} por un sistema real de Firebase Cloud Messaging (FCM) que:
+
+\begin{itemize}[leftmargin=*]
+  \item Registre cada dispositivo del usuario contra el backend.
+  \item Envie notificaciones reales cuando se publique en un canal suscrito.
+  \item Muestre notificaciones en los tres estados de la app: foreground, background y quit.
+  \item Permita navegar al canal correspondiente al tocar la notificacion.
+\end{itemize}
+
+\section{Contexto}
+
+Al cierre de la Sesion~\ref{ch:sesion5}, el \texttt{PostNotificationConsumer} enviaba notificaciones simuladas con logs del tipo \texttt{[PUSH-SIMULADO]}. El objetivo final del protocolo (Fase~6) exige notificaciones push reales. Se dividio el trabajo en cuatro sub-fases:
+
+\begin{enumerate}[leftmargin=*]
+  \item \textbf{F1:} Configuracion del proyecto en Firebase Console.
+  \item \textbf{F2:} Backend con Firebase Admin SDK y entidad \texttt{DeviceToken}.
+  \item \textbf{F3:} Configuracion Android + Flutter con \texttt{firebase\_messaging}.
+  \item \textbf{F4:} Manejo de notificaciones en foreground, background y quit.
+\end{enumerate}
+
+\section{Desarrollo}
+
+\subsection{F1: Configuracion en Firebase Console}
+
+Se creo un proyecto en Firebase Console llamado \texttt{notiuam-4ee15} y se registro una app Android con el paquete \texttt{mx.uam.notiuam\_mobile}. De la consola se descargaron dos archivos:
+
+\begin{itemize}[leftmargin=*]
+  \item \texttt{google-services.json}: se coloco en \texttt{android/app/}.
+  \item \texttt{service-account.json}: se coloco en \texttt{backend/src/main/resources/firebase/}.
+\end{itemize}
+
+Ambos archivos se agregaron a \texttt{.gitignore} porque contienen credenciales privadas.
+
+\subsection{F2: Backend con Firebase Admin SDK}
+
+\subsubsection{Dependencia}
+
+Se agrego al \texttt{pom.xml}:
+
+\begin{lstlisting}[language=XML]
+<dependency>
+    <groupId>com.google.firebase</groupId>
+    <artifactId>firebase-admin</artifactId>
+    <version>9.4.1</version>
+</dependency>
+\end{lstlisting}
+
+\subsubsection{Migracion V3}
+
+\begin{lstlisting}[language=SQL]
+CREATE TABLE device_tokens (
+    id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id     UUID         NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    token       VARCHAR(255) NOT NULL UNIQUE,
+    platform    VARCHAR(20)  NOT NULL CHECK (platform IN ('ANDROID', 'IOS', 'WEB')),
+    created_at  TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+    updated_at  TIMESTAMPTZ  NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX idx_device_tokens_user ON device_tokens(user_id);
+\end{lstlisting}
+
+\subsubsection{Inicializacion del SDK}
+
+\texttt{FirebaseConfig} carga el service account al arrancar la aplicacion y lo deja listo para usar.
+
+\begin{lstlisting}[language=Java]
+@Configuration
+public class FirebaseConfig {
+    @PostConstruct
+    public void initialize() {
+        try {
+            if (!FirebaseApp.getApps().isEmpty()) return;
+
+            ClassPathResource resource = new ClassPathResource(
+                "firebase/service-account.json");
+            if (!resource.exists()) {
+                log.warn("Sin service-account.json. Push deshabilitado.");
+                return;
+            }
+
+            try (InputStream is = resource.getInputStream()) {
+                FirebaseOptions options = FirebaseOptions.builder()
+                    .setCredentials(GoogleCredentials.fromStream(is))
+                    .build();
+                FirebaseApp.initializeApp(options);
+                log.info("Firebase Admin SDK inicializado");
+            }
+        } catch (IOException e) {
+            log.error("Error inicializando Firebase: {}", e.getMessage());
+        }
+    }
+}
+\end{lstlisting}
+
+\subsubsection{Servicio de envio}
+
+\texttt{FcmService} encapsula la logica de envio:
+
+\begin{lstlisting}[language=Java]
+public boolean sendToToken(String deviceToken, String title,
+                           String body, Map<String, String> data) {
+    if (!isEnabled()) return false;
+
+    try {
+        Message message = Message.builder()
+            .setToken(deviceToken)
+            .setNotification(Notification.builder()
+                .setTitle(title)
+                .setBody(body)
+                .build())
+            .putAllData(data != null ? data : Map.of())
+            .build();
+
+        String response = FirebaseMessaging.getInstance().send(message);
+        return true;
+    } catch (FirebaseMessagingException e) {
+        log.warn("Error enviando push: {} ({})",
+            e.getMessage(), e.getMessagingErrorCode());
+        return false;
+    }
+}
+\end{lstlisting}
+
+\subsubsection{Endpoints}
+
+\begin{lstlisting}[language=bash]
+POST   /api/me/device              (registrar token)
+DELETE /api/me/device?token=...    (eliminar token)
+\end{lstlisting}
+
+\subsubsection{Modificacion a \texttt{PostNotificationConsumer}}
+
+\begin{aviso}[Cambio a un archivo previo]
+El consumidor de la Sesion~\ref{ch:sesion5} se modifico para enviar notificaciones reales en lugar de solo loguear. Se inyectaron \texttt{FcmService} y \texttt{DeviceTokenService} y se anadio el envio por token:
+
+\begin{lstlisting}[language=Java]
+List<String> tokens = deviceTokens.tokensOf(sub.getUserId());
+for (String token : tokens) {
+    boolean ok = fcm.sendToToken(
+        token,
+        event.channelName(),
+        truncate(event.content()),
+        Map.of(
+            "channelId", event.channelId().toString(),
+            "postId", event.postId().toString()
+        )
+    );
+    if (ok) log.info("[PUSH-FCM] -> user={}", sub.getUserId());
+}
+\end{lstlisting}
+\end{aviso}
+
+\subsection{F3: Configuracion Android y Flutter}
+
+\subsubsection{Gradle}
+
+Se agrego el plugin de Google Services en \texttt{settings.gradle.kts} y \texttt{app/build.gradle.kts}.
+
+\begin{lstlisting}[language=Java]
+// settings.gradle.kts
+plugins {
+    id("dev.flutter.flutter-plugin-loader") version "1.0.0"
+    id("com.android.application") version "9.1.0" apply false
+    id("org.jetbrains.kotlin.android") version "2.4.0" apply false
+    id("com.google.gms.google-services") version "4.4.2" apply false
+}
+
+// app/build.gradle.kts
+plugins {
+    id("com.android.application")
+    id("dev.flutter.flutter-gradle-plugin")
+    id("com.google.gms.google-services")
+}
+
+android {
+    compileOptions {
+        isCoreLibraryDesugaringEnabled = true
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+    }
+}
+
+dependencies {
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
+}
+\end{lstlisting}
+
+\subsubsection{Permisos en AndroidManifest}
+
+\begin{lstlisting}[language=XML]
+<uses-permission android:name="android.permission.INTERNET"/>
+<uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+<uses-permission android:name="android.permission.VIBRATE"/>
+\end{lstlisting}
+
+Y dentro de \texttt{<application>}:
+
+\begin{lstlisting}[language=XML]
+<meta-data
+    android:name="com.google.firebase.messaging.default_notification_channel_id"
+    android:value="high_importance_channel" />
+\end{lstlisting}
+
+\subsubsection{Dependencias Flutter}
+
+Se agregaron a \texttt{pubspec.yaml}:
+
+\begin{lstlisting}[language=YAML]
+firebase_core: ^3.6.0
+firebase_messaging: ^15.1.3
+flutter_local_notifications: ^18.0.1
+\end{lstlisting}
+
+\subsubsection{\texttt{FcmService}}
+
+Servicio encargado de pedir permisos, obtener el token y registrarlo en el backend:
+
+\begin{lstlisting}[language=Java]
+Future<void> initialize() async {
+    if (!Platform.isAndroid && !Platform.isIOS) return;
+
+    final messaging = FirebaseMessaging.instance;
+    final settings = await messaging.requestPermission(
+        alert: true, badge: true, sound: true);
+
+    if (settings.authorizationStatus == AuthorizationStatus.denied) return;
+
+    final token = await messaging.getToken();
+    if (token == null) return;
+
+    await _registerWithBackend(token);
+    messaging.onTokenRefresh.listen(_registerWithBackend);
+    FirebaseMessaging.onMessage.listen(_onForegroundMessage);
+    FirebaseMessaging.onMessageOpenedApp.listen(_onMessageOpened);
+
+    final initial = await messaging.getInitialMessage();
+    if (initial != null) _onMessageOpened(initial);
+}
+
+Future<void> _registerWithBackend(String token) async {
+    final platform = Platform.isAndroid ? 'ANDROID' : 'IOS';
+    await _api.dio.post('/api/me/device', data: {
+        'token': token, 'platform': platform,
+    });
+}
+\end{lstlisting}
+
+\subsubsection{Integracion con \texttt{AuthProvider}}
+
+El token se registra automaticamente al hacer login y se elimina al cerrar sesion:
+
+\begin{lstlisting}[language=Java]
+Future<void> _handleAuthResponse(dynamic data) async {
+    // ... guardar tokens y usuario ...
+    await _fcm.initialize();   // registrar dispositivo
+}
+
+Future<void> logout() async {
+    await _fcm.unregister();   // eliminar token
+    // ...
+}
+\end{lstlisting}
+
+\subsection{F4: Manejo de notificaciones}
+
+\subsubsection{Los tres estados}
+
+FCM distingue tres estados de la aplicacion:
+
+\begin{table}[htbp]
+\centering
+\begin{tabular}{l l}
+\toprule
+Estado & Callback \\
+\midrule
+Foreground (app abierta) & \texttt{FirebaseMessaging.onMessage} \\
+Background (app minimizada) & \texttt{FirebaseMessaging.onMessageOpenedApp} \\
+Quit (app cerrada) & \texttt{messaging.getInitialMessage()} \\
+\bottomrule
+\end{tabular}
+\caption{Callbacks de FCM segun el estado de la aplicacion}
+\end{table}
+
+Los tres se manejan en \texttt{FcmService.initialize()} y todos disparan el mismo callback \texttt{onNotificationTap} que navega al canal.
+
+\subsubsection{Background handler}
+
+Para que el sistema operativo pueda procesar mensajes cuando la app esta cerrada, se registra un handler global:
+
+\begin{lstlisting}[language=Java]
+@pragma('vm:entry-point')
+Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+    await Firebase.initializeApp();
+    debugPrint('FCM background: ${message.notification?.title}');
+}
+\end{lstlisting}
+
+Se registra en \texttt{main()}:
+
+\begin{lstlisting}[language=Java]
+FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+\end{lstlisting}
+
+\subsubsection{Notificaciones locales}
+
+Para mostrar notificaciones cuando la app esta en foreground (FCM por defecto no lo hace), se usa \texttt{flutter\_local\_notifications}:
+
+\begin{lstlisting}[language=Java]
+void _onForegroundMessage(RemoteMessage message) {
+    final n = message.notification;
+    if (n != null) {
+        LocalNotifications.show(
+            title: n.title ?? 'NotiUAM',
+            body: n.body ?? '',
+        );
+    }
+}
+\end{lstlisting}
+
+El canal \texttt{high\_importance\_channel} se crea al arrancar la app:
+
+\begin{lstlisting}[language=Java]
+const channel = AndroidNotificationChannel(
+    'high_importance_channel',
+    'Notificaciones',
+    description: 'Avisos y alertas de NotiUAM',
+    importance: Importance.high,
+);
+await _plugin
+    .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
+    ?.createNotificationChannel(channel);
+\end{lstlisting}
+
+\subsubsection{Navegacion al canal}
+
+Para que el toque en la notificacion abra el canal correcto, se usa un \texttt{GlobalKey<NavigatorState>}:
+
+\begin{lstlisting}[language=Java]
+final navigatorKey = GlobalKey<NavigatorState>();
+
+void _wireFcm(FcmService fcm) {
+    fcm.onNotificationTap = (channelId, postId) {
+        navigatorKey.currentState?.push(MaterialPageRoute(
+            builder: (_) => ChannelDetailScreen(channelId: channelId),
+        ));
+    };
+}
+\end{lstlisting}
+
+\subsection{Cambios a archivos previos}
+
+\begin{itemize}[leftmargin=*]
+  \item \texttt{pom.xml}: se agrego la dependencia \texttt{firebase-admin}.
+  \item \texttt{PostNotificationConsumer.java}: se reemplazo la simulacion por el envio real.
+  \item \texttt{pubspec.yaml}: se agregaron las tres dependencias de Firebase.
+  \item \texttt{main.dart}: se inicializa Firebase, se registra el background handler y se inyecta \texttt{FcmService}.
+  \item \texttt{auth\_provider.dart}: \texttt{\_fcm.initialize()} al login y \texttt{\_fcm.unregister()} al logout.
+  \item \texttt{settings.gradle.kts} y \texttt{app/build.gradle.kts}: plugins de Firebase.
+  \item \texttt{AndroidManifest.xml}: permisos y meta-data del canal.
+\end{itemize}
+
+\subsection{Problemas encontrados y solucion}
+
+\subsubsection{Falta de \texttt{uses-material-design}}
+
+Al inicio los iconos de Material Design se veian como glifos de fuentes CJK. Se corrigio en la Fase de rediseno agregando \texttt{uses-material-design: true} al \texttt{pubspec.yaml}.
+
+\subsubsection{Core library desugaring}
+
+\texttt{flutter\_local\_notifications} requiere desugaring de librerias de Java 8:
+
+\begin{lstlisting}[language=bash]
+Dependency ':flutter_local_notifications' requires core library
+desugaring to be enabled for :app.
+\end{lstlisting}
+
+\textbf{Solucion:} se agrego \texttt{isCoreLibraryDesugaringEnabled = true} y la dependencia \texttt{coreLibraryDesugaring(...)} en \texttt{app/build.gradle.kts}.
+
+\subsubsection{Dependencias de Firebase no declaradas}
+
+Inicialmente \texttt{flutter pub get} no descargaba \texttt{firebase\_core} ni \texttt{firebase\_messaging}. Faltaba declararlas explicitamente en \texttt{pubspec.yaml}.
+
+\subsubsection{Background handler no registrado}
+
+FCM advertia:
+
+\begin{lstlisting}[language=bash]
+A background message could not be handled in Dart as no
+onBackgroundMessage handler has been registered.
+\end{lstlisting}
+
+\textbf{Solucion:} crear \texttt{fcm\_background.dart} con el handler y registrarlo en \texttt{main()} con \texttt{FirebaseMessaging.onBackgroundMessage()}.
+
+\subsubsection{Canal de notificaciones no creado}
+
+FCM advertia que el canal declarado en el manifest no existia en la app. Se resolvio creandolo explicitamente al arrancar con \texttt{flutter\_local\_notifications}.
+
+\section{Verificacion}
+
+\subsection{Registro del token}
+
+Al hacer login en el emulador Android aparecen los logs:
+
+\begin{lstlisting}[language=bash]
+I/flutter: FCM token: f4Pr5kGlQw-IsWljYQ6E...
+I/flutter: FCM: token registrado en el backend
+\end{lstlisting}
+
+Y en la base de datos:
+
+\begin{lstlisting}[language=SQL]
+SELECT u.email, d.platform, LEFT(d.token, 25) FROM device_tokens d
+JOIN users u ON u.id = d.user_id;
+
+    email      | platform |       token_prefix
+---------------+----------+---------------------------
+ aaron@uam.mx  | ANDROID  | f4Pr5kGlQw-IsWljYQ6EdM:AP
+\end{lstlisting}
+
+\subsection{App en foreground}
+
+Con la app abierta, cuando otro usuario publica en un canal suscrito:
+
+\begin{lstlisting}[language=bash]
+I/flutter: FCM foreground: <nombre del canal> - <contenido>
+\end{lstlisting}
+
+Y aparece una notificacion local visible en el emulador.
+
+\subsection{App en background}
+
+Con la app minimizada, la notificacion aparece en la barra del sistema Android. Al tocarla:
+
+\begin{lstlisting}[language=bash]
+I/flutter: FCM tap: channelId=0c1c26c1-... postId=b0738e37-...
+\end{lstlisting}
+
+Y la app navega automaticamente al canal.
+
+\subsection{App cerrada (quit)}
+
+Con la app cerrada completamente, al publicar aparece la notificacion. Al tocarla, la app arranca y despues de 500ms navega al canal.
+
+\subsection{Logs del backend}
+
+Despues de cada publicacion, los logs muestran:
+
+\begin{lstlisting}[language=bash]
+[PUSH-FCM] -> token=f4Pr5kGlQw... user=da4e045f...
+Notificaciones procesadas: 1 de N suscriptores
+\end{lstlisting}
+
+El contador \texttt{1 de N} excluye al autor del mensaje.
+
+\section{Resultado}
+
+\begin{exito}[Estado al cierre]
+\begin{itemize}[leftmargin=*]
+  \item Sistema de push real con FCM end-to-end.
+  \item Token registrado automaticamente al login y eliminado al logout.
+  \item Notificaciones en los tres estados de la app.
+  \item Tap en notificacion navega al canal correspondiente.
+  \item Canal \texttt{high\_importance\_channel} creado en el arranque.
+  \item Reemplazo completo del \texttt{[PUSH-SIMULADO]} por \texttt{[PUSH-FCM]}.
+\end{itemize}
+\end{exito}

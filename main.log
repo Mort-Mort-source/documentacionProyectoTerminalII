@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023/Debian) (preloaded format=pdflatex 2026.5.25)  8 OCT 2026 05:46
+This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023/Debian) (preloaded format=pdflatex 2026.5.25)  20 OCT 2026 03:48
 entering extended mode
  restricted \write18 enabled.
  file:line:error style messages enabled.
@@ -630,7 +630,7 @@ File: t1cmtt.fd 2023/04/13 v2.5m Standard LaTeX font definitions
 pdfTeX warning (ext4): destination with the same identifier (name{page.1}) has been already used, duplicate ignored
 <to be read again> 
                    \relax 
-l.41 ...numberline {4.2}Contexto}{21}{section.4.2}
+l.41 ...numberline {4.2}Contexto}{22}{section.4.2}
                                                   % [1
 
 ]
@@ -679,7 +679,18 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller to compensate:
 (fancyhdr)                \addtolength{\topmargin}{-0.1638pt}.
 
-[4])
+[4]
+LaTeX Info: Redefining \. on input line 281.
+LaTeX Info: Redefining \% on input line 281.
+
+
+Package fancyhdr Warning: \headheight is too small (12.0pt): 
+(fancyhdr)                Make it at least 12.1638pt, for example:
+(fancyhdr)                \setlength{\headheight}{12.1638pt}.
+(fancyhdr)                You might also make \topmargin smaller to compensate:
+(fancyhdr)                \addtolength{\topmargin}{-0.1638pt}.
+
+[5])
 \tf@toc=\write5
 \openout5 = `main.toc'.
 
@@ -693,14 +704,14 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller to compensate:
 (fancyhdr)                \addtolength{\topmargin}{-0.1638pt}.
 
-[5] (./capitulos/00_introduccion.tex
+[6] (./capitulos/00_introduccion.tex
 Cap\'{\i }tulo 1.
-[6
+[7
 
 ]) (./capitulos/01_sesion_infraestructura.tex
 LaTeX Info: Redefining \. on input line 14.
 LaTeX Info: Redefining \% on input line 14.
- [7]
+ [8]
 Cap\'{\i }tulo 2.
 (/usr/share/texlive/texmf-dist/tex/latex/listings/lstlang1.sty
 File: lstlang1.sty 2023/02/27 1.9 listings language file
@@ -711,7 +722,7 @@ LaTeX Font Info:    Font shape `T1/cmtt/bx/n' in size <10> not available
 (Font)              Font shape `T1/cmtt/m/n' tried instead on input line 40.
 LaTeX Font Info:    Font shape `T1/cmtt/bx/n' in size <12> not available
 (Font)              Font shape `T1/cmtt/m/n' tried instead on input line 47.
- [8
+ [9
 
 ]
 Overfull \hbox (19.46242pt too wide) in paragraph at lines 63--64
@@ -720,23 +731,23 @@ Overfull \hbox (19.46242pt too wide) in paragraph at lines 63--64
 
 LaTeX Info: Redefining \. on input line 102.
 LaTeX Info: Redefining \% on input line 102.
-[9]
+[10]
 LaTeX Info: Redefining \. on input line 151.
 LaTeX Info: Redefining \% on input line 151.
- [10]
+ [11]
 LaTeX Info: Redefining \. on input line 210.
 LaTeX Info: Redefining \% on input line 210.
- [11]) (./capitulos/02_sesion_backend_base.tex
-LaTeX Info: Redefining \. on input line 1.
-LaTeX Info: Redefining \% on input line 1.
- [12]
+ [12]) (./capitulos/02_sesion_backend_base.tex
 LaTeX Info: Redefining \. on input line 1.
 LaTeX Info: Redefining \% on input line 1.
  [13]
+LaTeX Info: Redefining \. on input line 1.
+LaTeX Info: Redefining \% on input line 1.
+ [14]
 Cap\'{\i }tulo 3.
 LaTeX Font Info:    Font shape `T1/cmtt/bx/n' in size <10.95> not available
 (Font)              Font shape `T1/cmtt/m/n' tried instead on input line 37.
-[14
+[15
 
 ] (/usr/share/texlive/texmf-dist/tex/latex/listings/lstlang1.sty
 File: lstlang1.sty 2023/02/27 1.9 listings language file
@@ -747,51 +758,51 @@ File: lstlang1.sty 2023/02/27 1.9 listings language file
 )
 LaTeX Info: Redefining \. on input line 92.
 LaTeX Info: Redefining \% on input line 92.
- [15]
+ [16]
 LaTeX Info: Redefining \. on input line 143.
 LaTeX Info: Redefining \% on input line 143.
- [16] (/usr/share/texlive/texmf-dist/tex/latex/listings/lstlang1.sty
+ [17] (/usr/share/texlive/texmf-dist/tex/latex/listings/lstlang1.sty
 File: lstlang1.sty 2023/02/27 1.9 listings language file
 )
 LaTeX Info: Redefining \. on input line 194.
 LaTeX Info: Redefining \% on input line 194.
- [17]
+ [18]
 LaTeX Info: Redefining \. on input line 244.
 LaTeX Info: Redefining \% on input line 244.
- [18]
+ [19]
 LaTeX Info: Redefining \. on input line 299.
 LaTeX Info: Redefining \% on input line 299.
- [19]) (./capitulos/03_sesion_seguridad_jwt.tex
+ [20]) (./capitulos/03_sesion_seguridad_jwt.tex
 LaTeX Info: Redefining \. on input line 1.
 LaTeX Info: Redefining \% on input line 1.
- [20]
+ [21]
 Cap\'{\i }tulo 4.
 
 Overfull \hbox (27.29106pt too wide) in paragraph at lines 19--20
 \T1/cmr/m/n/10.95 dos los end-points (sal-vo los pú-bli-cos por de-fec-to) que-da-ban blo-quea-dos con \T1/cmtt/m/n/10.95 inMemoryUserDetailsManager\T1/cmr/m/n/10.95 .
  []
 
-[21
+[22
 
 ]
 LaTeX Info: Redefining \. on input line 85.
 LaTeX Info: Redefining \% on input line 85.
- [22]
+ [23]
 Overfull \hbox (14.37207pt too wide) in paragraph at lines 92--93
 []\T1/cmtt/m/n/10.95 AuthenticationManager \T1/cmr/m/n/10.95 res-pal-da-do por \T1/cmtt/m/n/10.95 DaoAuthenticationProvider \T1/cmr/m/n/10.95 + \T1/cmtt/m/n/10.95 UserDetailsServiceImpl\T1/cmr/m/n/10.95 . 
  []
 
 LaTeX Info: Redefining \. on input line 143.
 LaTeX Info: Redefining \% on input line 143.
-[23{/usr/share/texmf/fonts/enc/dvips/cm-super/cm-super-ts1.enc}]
+[24{/usr/share/texmf/fonts/enc/dvips/cm-super/cm-super-ts1.enc}]
 LaTeX Info: Redefining \. on input line 193.
 LaTeX Info: Redefining \% on input line 193.
- [24]) (./capitulos/04_sesion_canales.tex
+ [25]) (./capitulos/04_sesion_canales.tex
 LaTeX Info: Redefining \. on input line 1.
 LaTeX Info: Redefining \% on input line 1.
- [25]
+ [26]
 Cap\'{\i }tulo 5.
-[26
+[27
 
 ]
 Overfull \hbox (6.2776pt too wide) in paragraph at lines 60--61
@@ -800,40 +811,40 @@ Overfull \hbox (6.2776pt too wide) in paragraph at lines 60--61
 
 LaTeX Info: Redefining \. on input line 95.
 LaTeX Info: Redefining \% on input line 95.
-[27]
+[28]
 LaTeX Info: Redefining \. on input line 134.
 LaTeX Info: Redefining \% on input line 134.
- [28]
+ [29]
 Overfull \hbox (58.37845pt too wide) in paragraph at lines 142--143
 []\T1/cmr/m/n/10.95 No se mo-di-fi-có \T1/cmtt/m/n/10.95 SecurityConfig.java\T1/cmr/m/n/10.95 : la re-gla \T1/cmtt/m/n/10.95 anyRequest().authenticated() \T1/cmr/m/n/10.95 ya cu-bría \T1/cmtt/m/n/10.95 /api/channels/**\T1/cmr/m/n/10.95 . 
  []
 
 LaTeX Info: Redefining \. on input line 183.
 LaTeX Info: Redefining \% on input line 183.
-[29]
+[30]
 LaTeX Info: Redefining \. on input line 243.
 LaTeX Info: Redefining \% on input line 243.
- [30]) (./capitulos/05_sesion_kafka.tex
+ [31]) (./capitulos/05_sesion_kafka.tex
 LaTeX Info: Redefining \. on input line 1.
 LaTeX Info: Redefining \% on input line 1.
- [31]
+ [32]
 Cap\'{\i }tulo 6.
-[32
+[33
 
 ]
 LaTeX Info: Redefining \. on input line 85.
 LaTeX Info: Redefining \% on input line 85.
- [33]
+ [34]
 LaTeX Info: Redefining \. on input line 136.
 LaTeX Info: Redefining \% on input line 136.
- [34]
+ [35]
 Overfull \hbox (6.41516pt too wide) in paragraph at lines 189--190
 []\T1/cmtt/m/n/10.95 PostService.java\T1/cmr/m/n/10.95 : se aña-dió el cam-po \T1/cmtt/m/n/10.95 postEventPublisher \T1/cmr/m/n/10.95 y una lla-ma-da a \T1/cmtt/m/n/10.95 publishPostCreated
  []
 
 LaTeX Info: Redefining \. on input line 192.
 LaTeX Info: Redefining \% on input line 192.
-[35]
+[36]
 Overfull \hbox (15.01283pt too wide) in paragraph at lines 208--209
 []\T1/cmr/m/n/10.95 El end-point \T1/cmtt/m/n/10.95 /api/me/unread \T1/cmr/m/n/10.95 de-vol-vía \T1/cmtt/m/n/10.95 HTTP 403 \T1/cmr/m/n/10.95 sin cuer-po. La cau-sa: el ar-chi-vo \T1/cmtt/m/n/10.95 MeController.java
  []
@@ -845,31 +856,31 @@ Overfull \hbox (22.52158pt too wide) in paragraph at lines 208--209
 
 LaTeX Info: Redefining \. on input line 242.
 LaTeX Info: Redefining \% on input line 242.
-[36]
+[37]
 LaTeX Info: Redefining \. on input line 293.
 LaTeX Info: Redefining \% on input line 293.
- [37]) (./capitulos/06a_sesion_flutter_setup.tex
+ [38]) (./capitulos/06a_sesion_flutter_setup.tex
 LaTeX Info: Redefining \. on input line 1.
 LaTeX Info: Redefining \% on input line 1.
- [38]
+ [39]
 Cap\'{\i }tulo 7.
-[39
+[40
 
 ]
 LaTeX Info: Redefining \. on input line 88.
 LaTeX Info: Redefining \% on input line 88.
- [40]
+ [41]
 LaTeX Info: Redefining \. on input line 137.
 LaTeX Info: Redefining \% on input line 137.
- [41]
+ [42]
 LaTeX Info: Redefining \. on input line 198.
 LaTeX Info: Redefining \% on input line 198.
- [42]) (./capitulos/06b_sesion_flutter_canales.tex
+ [43]) (./capitulos/06b_sesion_flutter_canales.tex
 LaTeX Info: Redefining \. on input line 1.
 LaTeX Info: Redefining \% on input line 1.
- [43]
+ [44]
 Cap\'{\i }tulo 8.
-[44
+[45
 
 ]
 Overfull \hbox (22.77736pt too wide) in paragraph at lines 44--45
@@ -878,7 +889,7 @@ Overfull \hbox (22.77736pt too wide) in paragraph at lines 44--45
 
 LaTeX Info: Redefining \. on input line 86.
 LaTeX Info: Redefining \% on input line 86.
-[45]
+[46]
 Overfull \hbox (16.56749pt too wide) in paragraph at lines 137--138
 []\T1/cmtt/m/n/10.95 home_shell.dart\T1/cmr/m/n/10.95 : se eli-mi-nó la cla-se \T1/cmtt/m/n/10.95 _Placeholder \T1/cmr/m/n/10.95 y se aña-die-ron \T1/cmtt/m/n/10.95 _MineScreen\T1/cmr/m/n/10.95 , \T1/cmtt/m/n/10.95 _SubscribedScreen
  []
@@ -890,15 +901,15 @@ Overfull \hbox (78.87784pt too wide) in paragraph at lines 138--139
 
 LaTeX Info: Redefining \. on input line 139.
 LaTeX Info: Redefining \% on input line 139.
-[46]
+[47]
 LaTeX Info: Redefining \. on input line 182.
 LaTeX Info: Redefining \% on input line 182.
- [47]) (./capitulos/07_sesion_flutter_post.tex
+ [48]) (./capitulos/07_sesion_flutter_post.tex
 LaTeX Info: Redefining \. on input line 1.
 LaTeX Info: Redefining \% on input line 1.
- [48]
+ [49]
 Cap\'{\i }tulo 9.
-[49
+[50
 
 ]
 Overfull \hbox (14.65231pt too wide) in paragraph at lines 44--45
@@ -907,78 +918,157 @@ Overfull \hbox (14.65231pt too wide) in paragraph at lines 44--45
 
 LaTeX Info: Redefining \. on input line 87.
 LaTeX Info: Redefining \% on input line 87.
-[50]
+[51]
 LaTeX Info: Redefining \. on input line 142.
 LaTeX Info: Redefining \% on input line 142.
- [51]) (./capitulos/08_rediseno_ux_ui.tex
+ [52]) (./capitulos/08_rediseno_ux_ui.tex
 LaTeX Info: Redefining \. on input line 1.
 LaTeX Info: Redefining \% on input line 1.
- [52]
+ [53]
 Cap\'{\i }tulo 10.
-[53
+[54
 
 ]
 LaTeX Info: Redefining \. on input line 94.
 LaTeX Info: Redefining \% on input line 94.
- [54]
+ [55]
 LaTeX Info: Redefining \. on input line 145.
 LaTeX Info: Redefining \% on input line 145.
- [55]) (./capitulos/09_backend_reportes_roles.tex
+ [56]) (./capitulos/09_backend_reportes_roles.tex
 LaTeX Info: Redefining \. on input line 1.
 LaTeX Info: Redefining \% on input line 1.
- [56]
+ [57]
 Cap\'{\i }tulo 11.
-[57
+[58
 
 ]
 LaTeX Info: Redefining \. on input line 93.
 LaTeX Info: Redefining \% on input line 93.
- [58]
+ [59]
 LaTeX Info: Redefining \. on input line 142.
 LaTeX Info: Redefining \% on input line 142.
- [59]
+ [60]
 LaTeX Info: Redefining \. on input line 191.
 LaTeX Info: Redefining \% on input line 191.
- [60]
+ [61]
 LaTeX Info: Redefining \. on input line 238.
 LaTeX Info: Redefining \% on input line 238.
- [61]
+ [62]
 LaTeX Info: Redefining \. on input line 294.
 LaTeX Info: Redefining \% on input line 294.
- [62]) (./capitulos/10_flutter_administracion.tex
+ [63]) (./capitulos/10_flutter_administracion.tex
 LaTeX Info: Redefining \. on input line 1.
 LaTeX Info: Redefining \% on input line 1.
- [63]
+ [64]
 Cap\'{\i }tulo 12.
-[64
+[65
 
 ]
 LaTeX Info: Redefining \. on input line 101.
 LaTeX Info: Redefining \% on input line 101.
- [65]
+ [66]
 LaTeX Info: Redefining \. on input line 151.
 LaTeX Info: Redefining \% on input line 151.
- [66]
+ [67]
 LaTeX Info: Redefining \. on input line 198.
 LaTeX Info: Redefining \% on input line 198.
- [67]
+ [68]
 
 Package tcolorbox Warning: Using nobreak failed. Try to enlarge `lines before break' or set page breaks manually on input line 198.
 
 ) (./capitulos/11_badges_institucionales.tex
 LaTeX Info: Redefining \. on input line 1.
 LaTeX Info: Redefining \% on input line 1.
- [68]
+ [69]
 Cap\'{\i }tulo 13.
-[69
+[70
 
 ]
 LaTeX Info: Redefining \. on input line 99.
 LaTeX Info: Redefining \% on input line 99.
- [70])
-LaTeX Info: Redefining \. on input line 34.
-LaTeX Info: Redefining \% on input line 34.
- [71] (./main.aux
+ [71]) (./capitulos/12_notificaciones_push.tex
+LaTeX Info: Redefining \. on input line 1.
+LaTeX Info: Redefining \% on input line 1.
+ [72]
+Cap\'{\i }tulo 14.
+[73
+
+]
+LaTeX Info: Redefining \. on input line 92.
+LaTeX Info: Redefining \% on input line 92.
+ [74]
+LaTeX Info: Redefining \. on input line 157.
+LaTeX Info: Redefining \% on input line 157.
+ [75]
+LaTeX Info: Redefining \. on input line 205.
+LaTeX Info: Redefining \% on input line 205.
+ [76]
+LaTeX Info: Redefining \. on input line 264.
+LaTeX Info: Redefining \% on input line 264.
+ [77]
+Overfull \hbox (43.74434pt too wide) in paragraph at lines 290--291
+[]\T1/cmr/m/n/10.95 Los tres se ma-ne-jan en \T1/cmtt/m/n/10.95 FcmService.initialize() \T1/cmr/m/n/10.95 y to-dos dis-pa-ran el mis-mo call-back \T1/cmtt/m/n/10.95 onNotificationTap
+ []
+
+LaTeX Info: Redefining \. on input line 323.
+LaTeX Info: Redefining \% on input line 323.
+[78]
+Overfull \hbox (2.49962pt too wide) in paragraph at lines 342--343
+[]\T1/cmr/m/n/10.95 Para que el to-que en la no-ti-fi-ca-cion abra el ca-nal co-rrec-to, se usa un \T1/cmtt/m/n/10.95 GlobalKey<NavigatorState>\T1/cmr/m/n/10.95 : 
+ []
+
+LaTeX Info: Redefining \. on input line 378.
+LaTeX Info: Redefining \% on input line 378.
+[79]
+Overfull \hbox (80.31668pt too wide) in paragraph at lines 383--384
+[]\T1/cmr/bx/n/10.95 Solucion: \T1/cmr/m/n/10.95 se agre-go \T1/cmtt/m/n/10.95 isCoreLibraryDesugaringEnabled = true \T1/cmr/m/n/10.95 y la de-pen-den-cia \T1/cmtt/m/n/10.95 coreLibraryDesugaring(...)
+ []
+
+
+Overfull \hbox (151.0189pt too wide) in paragraph at lines 398--399
+[]\T1/cmr/bx/n/10.95 Solucion: \T1/cmr/m/n/10.95 crear \T1/cmtt/m/n/10.95 fcm_background.dart \T1/cmr/m/n/10.95 con el hand-ler y re-gis-trar-lo en \T1/cmtt/m/n/10.95 main() \T1/cmr/m/n/10.95 con \T1/cmtt/m/n/10.95 FirebaseMessaging.onBackgroundMessage()\T1/cmr/m/n/10.95 . 
+ []
+
+LaTeX Info: Redefining \. on input line 440.
+LaTeX Info: Redefining \% on input line 440.
+[80]) (./capitulos/13_verificacion_correo.tex
+LaTeX Info: Redefining \. on input line 1.
+LaTeX Info: Redefining \% on input line 1.
+ [81]
+Cap\'{\i }tulo 15.
+[82
+
+]
+LaTeX Info: Redefining \. on input line 89.
+LaTeX Info: Redefining \% on input line 89.
+ [83]
+LaTeX Font Info:    External font `cmex10' loaded for size
+(Font)              <7> on input line 106.
+LaTeX Font Info:    External font `cmex10' loaded for size
+(Font)              <5> on input line 106.
+LaTeX Info: Redefining \. on input line 143.
+LaTeX Info: Redefining \% on input line 143.
+ [84]
+Overfull \hbox (166.26285pt too wide) in paragraph at lines 170--171
+[]\T1/cmr/m/n/10.95 Se ob-tu-vo el error \T1/cmtt/m/n/10.95 400: redirect_uri_mismatch\T1/cmr/m/n/10.95 . \T1/cmr/bx/n/10.95 So-lu-ción: \T1/cmr/m/n/10.95 se agre-gó la URI \T1/cmtt/m/n/10.95 https://developers.google.com/oauthplayground
+ []
+
+LaTeX Info: Redefining \. on input line 194.
+LaTeX Info: Redefining \% on input line 194.
+[85]) (./capitulos/14_google_signin.tex
+LaTeX Info: Redefining \. on input line 1.
+LaTeX Info: Redefining \% on input line 1.
+ [86]
+Cap\'{\i }tulo 16.
+[87
+
+]
+LaTeX Info: Redefining \. on input line 89.
+LaTeX Info: Redefining \% on input line 89.
+ [88])
+LaTeX Info: Redefining \. on input line 41.
+LaTeX Info: Redefining \% on input line 41.
+ [89] (./main.aux
 LaTeX Info: Redefining \. on input line 8.
 LaTeX Info: Redefining \% on input line 8.
 )
@@ -987,21 +1077,21 @@ LaTeX2e <2023-11-01> patch level 1
 L3 programming layer <2024-01-22>
  ***********
 Package rerunfilecheck Info: File `main.out' has not changed.
-(rerunfilecheck)             Checksum: 45BE790B6AC9EBF5D1D52DE5BDB954C9;28383.
+(rerunfilecheck)             Checksum: 8EF2F15C70FC328B7C0A012DFED6ECFB;35278.
  ) 
 Here is how much of TeX's memory you used:
- 30137 strings out of 474222
- 569679 string characters out of 5748733
+ 30921 strings out of 474222
+ 582465 string characters out of 5748733
  2257975 words of memory out of 5000000
- 50529 multiletter control sequences out of 15000+600000
+ 50859 multiletter control sequences out of 15000+600000
  574811 words of font info for 68 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
  88i,13n,90p,521b,2262s stack positions out of 10000i,1000n,20000p,200000b,200000s
 </usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy10.pfb></usr/share/texmf/fonts/type1/public/cm-super/sfbx1095.pfb></usr/share/texmf/fonts/type1/public/cm-super/sfbx1200.pfb></usr/share/texmf/fonts/type1/public/cm-super/sfbx1440.pfb></usr/share/texmf/fonts/type1/public/cm-super/sfbx1728.pfb></usr/share/texmf/fonts/type1/public/cm-super/sfbx2074.pfb></usr/share/texmf/fonts/type1/public/cm-super/sfbx2488.pfb></usr/share/texmf/fonts/type1/public/cm-super/sfit1000.pfb></usr/share/texmf/fonts/type1/public/cm-super/sfrm0600.pfb></usr/share/texmf/fonts/type1/public/cm-super/sfrm1000.pfb></usr/share/texmf/fonts/type1/public/cm-super/sfrm1095.pfb></usr/share/texmf/fonts/type1/public/cm-super/sfrm1200.pfb></usr/share/texmf/fonts/type1/public/cm-super/sfti1095.pfb></usr/share/texmf/fonts/type1/public/cm-super/sftt1000.pfb></usr/share/texmf/fonts/type1/public/cm-super/sftt1095.pfb></usr/share/texmf/fonts/type1/public/cm-super/sftt1200.pfb>
-Output written on main.pdf (72 pages, 667641 bytes).
+Output written on main.pdf (90 pages, 758694 bytes).
 PDF statistics:
- 2786 PDF objects out of 2984 (max. 8388607)
- 2652 compressed objects within 27 object streams
- 1409 named destinations out of 1440 (max. 500000)
- 1453 words of extra memory for PDF output out of 10000 (max. 10000000)
+ 3547 PDF objects out of 3580 (max. 8388607)
+ 3388 compressed objects within 34 object streams
+ 1854 named destinations out of 2073 (max. 500000)
+ 1773 words of extra memory for PDF output out of 10000 (max. 10000000)
 

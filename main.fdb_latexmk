@@ -1,7 +1,7 @@
 # Fdb version 4
-["pdflatex"] 1791459963.31905 "/home/mort/Escritorio/documentacionProyectoTerminalII/main.tex" "main.pdf" "main" 1791459964.84725 0
+["pdflatex"] 1792489727.5752 "/home/mort/Escritorio/documentacionProyectoTerminalII/main.tex" "main.pdf" "main" 1792489729.35639 0
   "/etc/texmf/web2c/texmf.cnf" 1779767773.16605 475 c0e671620eb5563b2130f56340a5fde8 ""
-  "/home/mort/Escritorio/documentacionProyectoTerminalII/main.tex" 1791459963.13893 951 dedc6b027996d09a87172d14e13358cc ""
+  "/home/mort/Escritorio/documentacionProyectoTerminalII/main.tex" 1792489684.66607 1072 2d84579c8328a029ed55dae774e3d842 ""
   "/usr/share/texlive/texmf-dist/fonts/map/fontname/texfonts.map" 1577235249 3524 cb3e574dea2d1052e39280babc910dc8 ""
   "/usr/share/texlive/texmf-dist/fonts/tfm/jknappen/ec/ecbx1095.tfm" 1136768653 3584 21b378cca2e40816b0e6d74a4dc98f04 ""
   "/usr/share/texlive/texmf-dist/fonts/tfm/jknappen/ec/ecbx1200.tfm" 1136768653 3584 402da0b29eafbad07963b1224b222f18 ""
@@ -192,7 +192,7 @@
   "/usr/share/texmf/web2c/texmf.cnf" 1707919699 40399 f2c302f7d2af602abb742093540a5834 ""
   "/var/lib/texmf/fonts/map/pdftex/updmap/pdftex.map" 1779767785.14574 5472669 54eaf61a88b6b7896ebd0dac973cb29c ""
   "/var/lib/texmf/web2c/pdftex/pdflatex.fmt" 1779767847 8213856 c3ffe4c0207d7b97d0cecdeb75e921f3 ""
-  "capitulos/00_introduccion.tex" 1791459501.56225 2544 5fec49c5dc1f7446558f9439af7ecab8 ""
+  "capitulos/00_introduccion.tex" 1792489727.39189 2797 fb2d2538b795032afacb9649f1c85ee3 ""
   "capitulos/01_sesion_infraestructura.tex" 1791254086.79849 8136 e536ca1e435befe3175e0024e49ca741 ""
   "capitulos/02_sesion_backend_base.tex" 1791253874.40772 10453 1c7e9dba0bbdbc9ffd5850b4b0c88eea ""
   "capitulos/03_sesion_seguridad_jwt.tex" 1791421021.65624 8649 ff5c4b42b78f8cffb1370a3962b6ef3b ""
@@ -205,10 +205,13 @@
   "capitulos/09_backend_reportes_roles.tex" 1791459413.54035 12238 6ae5dd0407be9249a497f88164795d1b ""
   "capitulos/10_flutter_administracion.tex" 1791459644.36221 6479 198dd29c940c97b08583cbf209367063 ""
   "capitulos/11_badges_institucionales.tex" 1791459470.01005 3353 755b9a245b955898211f3634102cea13 ""
-  "main.aux" 1791459964.73462 30600 9de827b41a0720a1070f98919610bc56 "pdflatex"
-  "main.out" 1791459964.73889 28383 45be790b6ac9ebf5d1d52de5bdb954c9 "pdflatex"
-  "main.tex" 1791459963.13893 951 dedc6b027996d09a87172d14e13358cc ""
-  "main.toc" 1791459964.73948 19028 bdb83257aefdc087166e2385cc6e6739 "pdflatex"
+  "capitulos/12_notificaciones_push.tex" 1791543628.15644 15952 bf9b3d4f2e01da817e7382749910422c ""
+  "capitulos/13_verificacion_correo.tex" 1792489561.64753 8751 e4f1fbef692a712e5410ff7257e7955d ""
+  "capitulos/14_google_signin.tex" 1792489595.54933 5384 a40a6284868c30cb3eca742e8057ed43 ""
+  "main.aux" 1792489729.2333 39848 8fc7c5426d7e4d562ca18bb029d7fa8e "pdflatex"
+  "main.out" 1792489729.23834 35278 8ef2f15c70fc328b7c0a012dfed6ecfb "pdflatex"
+  "main.tex" 1792489684.66607 1072 2d84579c8328a029ed55dae774e3d842 ""
+  "main.toc" 1792489729.23869 24834 6bde90f1ddfea73ea605b7b5a6f8fd68 "pdflatex"
   "preambulo.tex" 1791459925.72408 2239 46f03ce656a43d20e49fbd136865ed8c ""
   (generated)
   "main.aux"

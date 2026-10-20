@@ -1,0 +1,210 @@
+\chapter{Verificación de correo electrónico con OAuth2}
+\label{ch:verificacion_correo}
+
+\section{Objetivo}
+
+Implementar un flujo de verificación de correo electrónico para el registro de nuevos usuarios, garantizando que:
+
+\begin{itemize}[leftmargin=*]
+  \item Solo se registren correos reales y activos.
+  \item El envío de correos funcione de forma autónoma, sin depender de la habilitación de contraseñas de aplicación por parte del administrador de TI de la universidad.
+  \item El sistema utilice OAuth2 en lugar de contraseñas SMTP tradicionales, asegurando su viabilidad a largo plazo.
+  \item Se mantenga un atajo seguro para crear usuarios de prueba desde la terminal durante el desarrollo.
+\end{itemize}
+
+\section{Contexto}
+
+El flujo de registro inicial solo validaba el dominio \texttt{@cua.uam.mx} de forma sintáctica, lo que permitía registrar correos inexistentes o mal escritos. Para enviar correos de verificación reales, se intentó usar contraseñas de aplicación de Gmail, pero el administrador de Google Workspace de la UAM-C tiene esa opción deshabilitada por políticas de seguridad.
+
+Se optó por implementar OAuth2, que permite al backend autenticarse con los servidores de Google usando un \textit{Refresh Token} de larga duración, sin necesidad de contraseñas de aplicación y sin intervención del administrador.
+
+\section{Desarrollo}
+
+\subsection{Configuración en Google Cloud Console}
+
+Se creó un proyecto en Google Cloud Console y se habilitó la Gmail API. Se generó un \textbf{ID de cliente de OAuth} de tipo \textit{Aplicación web} (necesario para el OAuth 2.0 Playground) y se añadió la URI de redirección:
+
+\begin{lstlisting}[language=bash]
+https://developers.google.com/oauthplayground
+\end{lstlisting}
+
+Utilizando el Playground, se autorizó el scope \texttt{https://mail.google.com/} y se obtuvo un \textbf{Refresh Token} de larga duración.
+
+\subsection{Configuración de Spring Boot}
+
+Se añadieron las dependencias necesarias al \texttt{pom.xml}:
+
+\begin{lstlisting}[language=XML]
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-mail</artifactId>
+</dependency>
+<dependency>
+    <groupId>com.google.api-client</groupId>
+    <artifactId>google-api-client</artifactId>
+    <version>2.7.0</version>
+</dependency>
+\end{lstlisting}
+
+Las credenciales se almacenaron en el archivo \texttt{.env} (ignorado por Git):
+
+\begin{lstlisting}[language=bash]
+GMAIL_CLIENT_ID=tu-client-id-web.apps.googleusercontent.com
+GMAIL_CLIENT_SECRET=tu-client-secret-web
+GMAIL_REFRESH_TOKEN=tu-refresh-token
+GMAIL_FROM_EMAIL=tu-correo@gmail.com
+\end{lstlisting}
+
+\subsection{Componentes del backend}
+
+\subsubsection{\texttt{MailConfig}}
+
+Clase de configuración que construye el \texttt{JavaMailSender} autenticándose mediante XOAUTH2. Renueva el token de acceso a partir del Refresh Token antes de cada envío.
+
+\begin{lstlisting}[language=Java]
+@Configuration
+public class MailConfig {
+    @Value("${GMAIL_CLIENT_ID}") private String clientId;
+    @Value("${GMAIL_CLIENT_SECRET}") private String clientSecret;
+    @Value("${GMAIL_REFRESH_TOKEN}") private String refreshToken;
+    @Value("${spring.mail.username}") private String username;
+
+    @Bean
+    public JavaMailSender javaMailSender() throws Exception {
+        JavaMailSenderImpl mailSender = new JavaMailSenderImpl();
+        mailSender.setHost("smtp.gmail.com");
+        mailSender.setPort(587);
+        mailSender.setUsername(username);
+
+        GoogleCredential credential = new GoogleCredential.Builder()
+                .setTransport(GoogleNetHttpTransport.newTrustedTransport())
+                .setJsonFactory(GsonFactory.getDefaultInstance())
+                .setClientSecrets(clientId, clientSecret)
+                .build()
+                .setRefreshToken(refreshToken);
+
+        credential.refreshToken();
+        mailSender.setPassword(credential.getAccessToken());
+
+        Properties props = mailSender.getJavaMailProperties();
+        props.put("mail.smtp.auth", "true");
+        props.put("mail.smtp.starttls.enable", "true");
+        props.put("mail.smtp.auth.mechanisms", "XOAUTH2");
+        props.put("mail.smtp.sasl.enable", "true");
+        props.put("mail.smtp.sasl.mechanisms", "XOAUTH2");
+        return mailSender;
+    }
+}
+\end{lstlisting}
+
+\subsubsection{\texttt{EmailService}}
+
+Genera un código de 6 dígitos, lo guarda en Redis con una expiración de 10 minutos y lo envía por correo. Al verificar el código, guarda un flag temporal en Redis para permitir el registro.
+
+\begin{lstlisting}[language=Java]
+public void sendVerificationCode(String email) {
+    String code = String.format("%06d", random.nextInt(1_000_000));
+    redis.opsForValue().set(CODE_PREFIX + email, code,
+            Duration.ofMinutes(codeTtlMinutes));
+    // ... (creacion y envio del correo)
+}
+
+public boolean verifyCode(String email, String code) {
+    String stored = redis.opsForValue().get(CODE_PREFIX + email);
+    if (stored == null || !stored.equals(code)) return false;
+
+    redis.delete(CODE_PREFIX + email);
+    redis.opsForValue().set(VERIFIED_PREFIX + email, "true",
+            Duration.ofMinutes(verifiedTtlMinutes));
+    return true;
+}
+\end{lstlisting}
+
+\subsubsection{Endpoint de desarrollo \texttt{register-dev}}
+
+Para no perder agilidad en las pruebas, se creó un controlador que \textbf{solo existe en el perfil \texttt{dev}}. Permite crear usuarios directamente sin verificación.
+
+\begin{lstlisting}[language=Java]
+@RestController
+@RequestMapping("/api/auth")
+@Profile("dev")
+public class DevAuthController {
+    // ... (inyeccion de repositorios)
+
+    @PostMapping("/register-dev")
+    public ResponseEntity<AuthResponse> registerDev(@Valid @RequestBody RegisterRequest req) {
+        // ... validaciones
+        User user = User.builder()
+                .email(email)
+                .passwordHash(passwordEncoder.encode(req.password()))
+                // ...
+                .emailVerified(true)
+                .build();
+        user = userRepository.save(user);
+        // ... retorno de tokens
+    }
+}
+\end{lstlisting}
+
+\subsection{Cambios a archivos previos}
+
+\begin{itemize}[leftmargin=*]
+  \item \texttt{pom.xml}: se añadieron las dependencias de correo y de Google API Client.
+  \item \texttt{application.yml}: se agregó la configuración de \texttt{spring.mail} y el bloque \texttt{notiuam.email}.
+  \item \texttt{User.java}: se añadió el campo \texttt{emailVerified}.
+  \item \texttt{AuthService.java}: se inyectó \texttt{EmailService} y se añadió la validación en el método \texttt{register}.
+\end{itemize}
+
+\subsection{Problemas encontrados y solución}
+
+\subsubsection{Contraseña de aplicación bloqueada por Google Workspace}
+
+La interfaz de contraseñas de aplicación estaba bloqueada por el administrador. \textbf{Solución:} se implementó OAuth2 con un Refresh Token, que no requiere habilitación por parte del administrador.
+
+\subsubsection{Error de credenciales inválidas en el Playground}
+
+Se obtuvo el error \texttt{401: invalid\_client}. \textbf{Solución:} el cliente OAuth debía ser de tipo \textit{Aplicación web}, no de escritorio, para poder usar el Playground.
+
+\subsubsection{\texttt{redirect\_uri\_mismatch}}
+
+Se obtuvo el error \texttt{400: redirect\_uri\_mismatch}. \textbf{Solución:} se agregó la URI \texttt{https://developers.google.com/oauthplayground} a la lista de redirecciones autorizadas del cliente web.
+
+\section{Verificación}
+
+\subsection{Prueba de envío real}
+
+\begin{lstlisting}[language=bash]
+curl -s -X POST http://localhost:8081/api/auth/send-verification \
+  -H "Content-Type: application/json" \
+  -d '{"email":"aaron.r.ramos@cua.uam.mx"}' | jq
+\end{lstlisting}
+
+\begin{exito}[Resultado esperado]
+\begin{itemize}[leftmargin=*]
+  \item Respuesta: \texttt{\{"message": "Codigo enviado"\}}.
+  \item Recepción del correo real en la bandeja del usuario.
+  \item Log en el backend: \texttt{Correo de verificacion enviado...}.
+\end{itemize}
+\end{exito}
+
+\subsection{Prueba del atajo de desarrollo}
+
+\begin{lstlisting}[language=bash]
+curl -s -X POST http://localhost:8081/api/auth/register-dev \
+  -H "Content-Type: application/json" \
+  -d '{"email":"test10@cua.uam.mx", "password":"password123", "displayName":"Test", "role":"PROFESSOR"}' | jq
+\end{lstlisting}
+
+\begin{exito}[Resultado esperado]
+Respuesta \texttt{201 Created} con los tokens de acceso, sin enviar correo.
+\end{exito}
+
+\section{Resultado}
+
+\begin{exito}[Estado al cierre]
+\begin{itemize}[leftmargin=*]
+  \item Envío de correos de verificación reales mediante OAuth2 (XOAUTH2).
+  \item Validación de correos antes del registro.
+  \item Endpoint de atajo \texttt{register-dev} para pruebas (solo en perfil dev).
+\end{itemize}
+\end{exito}

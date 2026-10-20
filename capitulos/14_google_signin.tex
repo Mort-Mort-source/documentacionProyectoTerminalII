@@ -1,0 +1,129 @@
+\chapter{Autenticación con Google Sign-In}
+\label{ch:google_signin}
+
+\section{Objetivo}
+
+Implementar el inicio de sesión con Google, restringido exclusivamente a cuentas institucionales \texttt{@cua.uam.mx}, permitiendo a los usuarios acceder a la plataforma con un solo clic, sin necesidad de recordar contraseñas.
+
+\section{Contexto}
+
+Dado que la UAM-C utiliza Google Workspace for Education, todos los correos \texttt{@cua.uam.mx} son cuentas de Google. Integrar Google Sign-In no solo mejora la experiencia de usuario, sino que refuerza la seguridad, ya que delega la autenticación a Google y valida el dominio institucional.
+
+\section{Desarrollo}
+
+\subsection{Configuración en Google Cloud Console}
+
+Se generó un \textbf{ID de cliente de OAuth} de tipo \textit{Android}. Se registró el nombre del paquete \texttt{mx.uam.notiuam\_mobile} y la huella digital SHA-1 del emulador.
+
+Para obtener el SHA-1 del entorno de desarrollo, se ejecutó:
+
+\begin{lstlisting}[language=bash]
+cd android && ./gradlew signingReport
+\end{lstlisting}
+
+\subsection{Backend}
+
+Se creó el servicio \texttt{GoogleAuthService} que valida el ID Token enviado por el cliente. Utiliza la librería de Google API Client y verifica que la audiencia coincida con el Client ID configurado.
+
+\begin{lstlisting}[language=Java]
+@Service
+public class GoogleAuthService {
+    @Value("${GMAIL_CLIENT_ID}")
+    private String clientId;
+
+    public GoogleIdToken.Payload verify(String idTokenString) {
+        GoogleIdTokenVerifier verifier = new GoogleIdTokenVerifier.Builder(
+                new NetHttpTransport(), GsonFactory.getDefaultInstance())
+                .setAudience(Collections.singletonList(clientId))
+                .build();
+        GoogleIdToken idToken = verifier.verify(idTokenString);
+        if (idToken == null) throw new IllegalArgumentException("Token invalido");
+        return idToken.getPayload();
+    }
+}
+\end{lstlisting}
+
+En \texttt{AuthService} se añadió el método \texttt{loginWithGoogle} que recibe el token, valida el dominio y crea el usuario si no existe (marcándolo como verificado directamente):
+
+\begin{lstlisting}[language=Java]
+public AuthResponse loginWithGoogle(String idTokenString) {
+    var payload = googleAuthService.verify(idTokenString);
+    String email = payload.getEmail().toLowerCase().trim();
+
+    if (!email.endsWith("@cua.uam.mx")) {
+        throw new IllegalArgumentException("Solo se permiten correos @cua.uam.mx");
+    }
+
+    User user = userRepository.findByEmail(email).orElseGet(() -> {
+        User nuevo = User.builder()
+                .email(email)
+                .displayName(payload.get("name") != null ? payload.get("name").toString() : email)
+                .passwordHash("") // Sin contrasena, solo Google
+                .role(Role.STUDENT)
+                .emailVerified(true) // Google ya verifica
+                .enabled(true)
+                .build();
+        return userRepository.save(nuevo);
+    });
+
+    return buildAuthResponse(user);
+}
+\end{lstlisting}
+
+\subsection{Cliente Flutter}
+
+Se añadió la dependencia \texttt{google\_sign\_in}. El servicio \texttt{GoogleAuthService} utiliza el parámetro \texttt{hostedDomain} para restringir el selector de cuentas a solo \texttt{@cua.uam.mx}.
+
+\begin{lstlisting}[language=Java]
+class GoogleAuthService {
+  static final _googleSignIn = GoogleSignIn(
+    scopes: ['email', 'profile'],
+    hostedDomain: 'cua.uam.mx',
+    serverClientId: '584002587099-...apps.googleusercontent.com',
+  );
+
+  static Future<String?> signInAndGetIdToken() async {
+    final account = await _googleSignIn.signIn();
+    if (account == null) return null;
+    final auth = await account.authentication;
+    return auth.idToken;
+  }
+}
+\end{lstlisting}
+
+Se añadió un botón de \textit{Iniciar sesión con Google} en la pantalla de login, con un separador visual que divide el formulario tradicional del inicio con Google.
+
+\subsection{Problemas encontrados y solución}
+
+\subsubsection{Error \texttt{ApiException: 10} en Android}
+
+Al intentar el login, el emulador lanzaba \texttt{ApiException: 10 (DEVELOPER\_ERROR)}. \textbf{Solución:} 
+\begin{enumerate}[leftmargin=*]
+  \item Se agregó el SHA-1 del emulador en Firebase Console.
+  \item Se descargó el nuevo \texttt{google-services.json}.
+  \item Se detectó que faltaba el \texttt{client\_type: 1} (Android) en el archivo, por lo que se creó manualmente el Client ID de Android en Google Cloud Console.
+  \item Se forzó el \texttt{serverClientId} en el código de Flutter con el Client ID de tipo Web.
+\end{enumerate}
+
+\section{Verificación}
+
+\begin{enumerate}[leftmargin=*]
+  \item Abrir la app en el emulador.
+  \item Tocar \textbf{Iniciar sesión con Google}.
+  \item El selector de cuentas solo muestra correos \texttt{@cua.uam.mx}.
+  \item Seleccionar la cuenta y entrar directamente al \texttt{HomeShell}.
+\end{enumerate}
+
+\begin{exito}[Resultado obtenido]
+El flujo de Google Sign-In funciona correctamente y el usuario accede a la app sin ingresar contraseña.
+\end{exito}
+
+\section{Resultado}
+
+\begin{exito}[Estado al cierre]
+\begin{itemize}[leftmargin=*]
+  \item Autenticación con Google restringida a cuentas institucionales.
+  \item Creación automática de usuarios si es su primer inicio de sesión.
+  \item Eliminación de la fricción del registro con contraseña para usuarios de Google Workspace.
+\end{itemize}
+\end{exito}
